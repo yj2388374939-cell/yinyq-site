@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="殷雲清的个人简历网站：展示作编曲、音响设计、平面设计、插画与项目作品。"
+    />
+    <title>殷雲清 | 个人简历</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="返回顶部">
+        <span class="brand-mark">雲</span>
+        <span class="brand-text" data-i18n="brandName">殷雲清</span>
+      </a>
+
+      <nav class="nav" aria-label="主导航">
+        <a href="#experience" data-i18n="navExperience">经历</a>
+        <a href="#projects" data-i18n="navProjects">项目</a>
+        <a href="#works" data-i18n="navWorks">作品</a>
+        <a href="#skills" data-i18n="navSkills">技能</a>
+        <a href="#contact" data-i18n="navContact">联系</a>
+      </nav>
+
+      <div class="toolbar" aria-label="页面工具">
+        <div class="language-switch" aria-label="切换语言">
+          <button class="is-active" type="button" data-lang="zh" aria-pressed="true">中</button>
+          <button type="button" data-lang="en" aria-pressed="false">EN</button>
+          <button type="button" data-lang="ja" aria-pressed="false">日</button>
+        </div>
+        <button class="icon-button" type="button" data-action="copy-email" aria-label="复制邮箱" data-i18n-aria="copyEmail">
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M4 4h16v16H4z" />
+            <path d="m4 7 8 6 8-6" />
+          </svg>
+        </button>
+        <button class="icon-button" type="button" data-action="print" aria-label="打印简历" data-i18n-aria="printResume">
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M7 8V4h10v4" />
+            <path d="M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2" />
+            <path d="M7 14h10v6H7z" />
+          </svg>
+        </button>
+        <button class="icon-button" type="button" data-action="theme" aria-label="切换深浅色" data-i18n-aria="toggleTheme">
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="profile-section" aria-labelledby="profile-title">
+        <div class="profile-copy">
+          <p class="eyebrow" data-i18n="profileEyebrow">个人简历 / Portfolio</p>
+          <h1 id="profile-title" data-i18n="profileName">殷雲清</h1>
+          <p class="alias-line">
+            <span data-i18n="aliasIntro">你可以称呼我</span>
+            <strong data-i18n="primaryAliases">殷雲清 / JAN WANCING / ヤン・ワンチン</strong>
+          </p>
+          <p class="common-name" data-i18n="commonAliases">
+            张云恺 / Klaus Zhang / ZHANG YUNKAI / チョウ・ウンカイ
+          </p>
+          <p class="role" data-i18n="role">作编曲 / 音响设计 / 平面设计 / 插画</p>
+          <p class="summary" data-i18n="summary">
+            关注声音、视觉与互动体验之间的叙事关系，持续创作音乐、声音设计、平面设计与插画项目。
+          </p>
+
+          <div class="contact-strip" aria-label="核心联系方式">
+            <span data-i18n="newMedia">New Media & Game Design @ KR DCU</span>
+            <span data-i18n="soundDesign">Sound Design @ Senzoku Gakuen</span>
+          </div>
+        </div>
+
+        <button class="profile-visual owner-trigger" type="button" aria-label="个人标识">
+          <div class="portrait-frame">
+            <div class="portrait-card">
+              <img class="portrait-image" src="assets/yinyunqing.jpg" alt="殷雲清个人标识" />
+              <span class="portrait-line"></span>
+              <span class="portrait-caption" data-i18n="portraitCaption">个人标识 / YINYUNQING</span>
+            </div>
+          </div>
+        </button>
+      </section>
+
+      <section class="section-grid" aria-label="简历概览">
+        <article class="metric">
+          <span class="metric-value" data-i18n="metricProjectsValue">6</span>
+          <span class="metric-label" data-i18n="metricProjectsLabel">个项目</span>
+        </article>
+        <article class="metric">
+          <span class="metric-value" data-i18n="metricLanguagesValue">CN / JP / EN</span>
+          <span class="metric-label" data-i18n="metricLanguagesLabel">工作语言</span>
+        </article>
+        <article class="metric">
+          <span class="metric-value" data-i18n="metricFieldsValue">2</span>
+          <span class="metric-label" data-i18n="metricFieldsLabel">个专业方向</span>
+        </article>
+      </section>
+
+      <section class="content-section" id="experience">
+        <div class="section-heading stacked-heading title-first-heading">
+          <h2 data-i18n="projectExperienceTitle">项目经历</h2>
+          <p class="eyebrow" data-i18n="projectExperienceEyebrow">Projects</p>
+        </div>
+
+        <div class="timeline">
+          <article class="timeline-item">
+            <div class="timeline-date">2021.03</div>
+            <div class="timeline-body">
+              <h3 data-i18n="expCmccAnnualTitle">中国移动广东公司年会 - 誓师大会</h3>
+              <p class="project-role" data-i18n="expCmccAnnualRole">音响调度</p>
+            </div>
+          </article>
+
+          <article class="timeline-item">
+            <div class="timeline-date">2021.06</div>
+            <div class="timeline-body">
+              <h3 data-i18n="expCmccMvTitle">中国移动广东公司中国共产党 100 周年党庆 MV</h3>
+              <p class="project-role" data-i18n="expCmccMvRole">音乐担当</p>
+            </div>
+          </article>
+
+          <article class="timeline-item">
+            <div class="timeline-date">2022.06</div>
+            <div class="timeline-body">
+              <h3 data-i18n="expHospitalTitle">广东省人民医院 5G 医疗宣传片</h3>
+              <p class="project-role" data-i18n="expHospitalRole">场景布置 / 音乐顾问</p>
+            </div>
+          </article>
+
+          <article class="timeline-item">
+            <div class="timeline-date">2022.11</div>
+            <div class="timeline-body">
+              <h3 data-i18n="expAntiDrugTitle">广州市公用事业技师学院 - 广州市禁毒主题文艺作品创作</h3>
+              <p class="project-role" data-i18n="expAntiDrugRole">作编曲</p>
+            </div>
+          </article>
+
+          <article class="timeline-item">
+            <div class="timeline-date">2023.05</div>
+            <div class="timeline-body">
+              <h3 data-i18n="expGacTitle">广汽传祺 E9 发布会</h3>
+              <p class="project-role" data-i18n="expGacRole">音乐顾问</p>
+            </div>
+          </article>
+
+          <article class="timeline-item">
+            <div class="timeline-date">2026.06</div>
+            <div class="timeline-body">
+              <h3 data-i18n="expDonguriTitle">游戏《ドングリ》</h3>
+              <p class="project-role" data-i18n="expDonguriRole">配乐</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="content-section" id="projects">
+        <div class="section-heading stacked-heading">
+          <p class="eyebrow" data-i18n="featuredProjectsEyebrow">Projects</p>
+          <h2 data-i18n="featuredProjectsTitle">重点项目</h2>
+        </div>
+
+        <div class="featured-project">
+          <p class="project-tag" data-i18n="studioTag">Independent Game Studio</p>
+          <h3 data-i18n="studioTitle">独立游戏工作室</h3>
+          <p data-i18n="studioDescription">
+            与三名合伙人一起创建独立游戏工作室，作为音乐和插画担当。目前正在进行视觉小说游戏、卡牌游戏、类恶魔城游戏开发。
+          </p>
+        </div>
+
+        <div class="project-grid">
+          <article class="project-card">
+            <img src="assets/visual-novel-character.png" alt="视觉小说游戏角色设定图" />
+            <div>
+              <p class="project-tag">Visual Novel</p>
+              <h3 data-i18n="visualNovelTitle">视觉小说游戏</h3>
+              <p data-i18n="visualNovelDescription">参与项目概念推进、视觉方向讨论与音乐氛围设计。</p>
+            </div>
+          </article>
+
+          <article class="project-card">
+            <img src="assets/game-illustration.png" alt="游戏角色插画" />
+            <div>
+              <p class="project-tag">Card Game</p>
+              <h3 data-i18n="cardGameTitle">卡牌游戏</h3>
+              <p data-i18n="cardGameDescription">负责角色插画、视觉素材与声音气质的协同设计。</p>
+            </div>
+          </article>
+
+          <article class="project-card">
+            <img src="assets/adaptive-music-unity.png" alt="Unity 中的自适应音乐测试界面" />
+            <div>
+              <p class="project-tag">Metroidvania</p>
+              <h3 data-i18n="metroidvaniaTitle">类恶魔城游戏</h3>
+              <p data-i18n="metroidvaniaDescription">进行游戏配乐、战斗段落音乐逻辑与动态音乐测试。</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="content-section" id="works">
+        <div class="section-heading stacked-heading">
+          <p class="eyebrow" data-i18n="worksEyebrow">Works</p>
+          <h2 data-i18n="worksTitle">作品展示</h2>
+        </div>
+
+        <div class="works-block">
+          <div class="subsection-heading">
+            <h3 data-i18n="musicWorksTitle">音乐作品</h3>
+            <p data-i18n="musicWorksIntro">按时间从新到旧排列。</p>
+          </div>
+
+          <div class="music-list">
+            <a
+              class="music-item"
+              href="https://www.bilibili.com/video/BV1VV2FBqE2w/?spm_id_from=333.1387.0.0&amp;vd_source=e5dacc84523148e5efbb05dece131a79"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span class="music-index">01</span>
+              <div>
+                <h4 data-i18n="musicBuildEmpireTitle">Build My Empire</h4>
+                <p data-i18n="musicBuildEmpireMeta">BanG Dream 同人曲</p>
+              </div>
+              <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
+            </a>
+
+            <a
+              class="music-item"
+              href="https://music.163.com/song?id=1994412519&amp;uct2=U2FsdGVkX1+DlUOmINiNtp8G2CH1si2AFWpfS21Ehy8="
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span class="music-index">02</span>
+              <div>
+                <h4 data-i18n="musicDangerousSugarTitle">危险糖衣</h4>
+                <p data-i18n="musicDangerousSugarMeta">为禁毒宣传所作</p>
+              </div>
+              <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
+            </a>
+
+            <a
+              class="music-item"
+              href="https://music.163.com/song?id=1973417078&amp;uct2=U2FsdGVkX1/84NIboWzxRkrPZ6quiNlnYW3wiSoNUf0="
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span class="music-index">03</span>
+              <div>
+                <h4 data-i18n="musicExistenceTitle">Existence</h4>
+                <p data-i18n="musicExistenceMeta">原创音乐作品</p>
+              </div>
+              <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
+            </a>
+
+            <a
+              class="music-item"
+              href="https://music.163.com/song?id=1939350742&amp;uct2=U2FsdGVkX182zsPxAMvysIm/hq2tuWXIh0nwSFsv1FE="
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span class="music-index">04</span>
+              <div>
+                <h4 data-i18n="musicShanghaiAliceTitle">明治十七年上海爱丽丝舞曲</h4>
+                <p data-i18n="musicShanghaiAliceMeta">東方Project 同人曲</p>
+              </div>
+              <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
+            </a>
+
+            <a
+              class="music-item"
+              href="https://music.163.com/song?id=1939690181&amp;uct2=U2FsdGVkX18o2dPm3ZRzFQTbyOCmKaeMZvVVn6AvLqA="
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span class="music-index">05</span>
+              <div>
+                <h4 data-i18n="musicFloweringNightTitle">Flowering night No.11 I.Walts</h4>
+                <p data-i18n="musicFloweringNightMeta">東方Project 同人曲</p>
+              </div>
+              <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
+            </a>
+
+            <a
+              class="music-item"
+              href="https://music.163.com/song?id=1919472964&amp;uct2=U2FsdGVkX1/qCrBQDgq5+xn7b+sHGb4WPWjiu0iWSf8="
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span class="music-index">06</span>
+              <div>
+                <h4 data-i18n="musicInheritanceTitle">继承之歌</h4>
+                <p data-i18n="musicInheritanceMeta">动画《无职转生》第一季 OP2 弦乐改编</p>
+              </div>
+              <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
+            </a>
+
+            <a
+              class="music-item"
+              href="https://music.163.com/song?id=1821217335&amp;uct2=U2FsdGVkX19ugkRh7gQtm8c64C2ysbq0BTsWtJzj62s="
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span class="music-index">07</span>
+              <div>
+                <h4 data-i18n="musicTravelerTitle">旅人之歌</h4>
+                <p data-i18n="musicTravelerMeta">动画《无职转生》第一季 OP1 弦乐改编</p>
+              </div>
+              <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="works-block">
+          <div class="subsection-heading">
+            <h3 data-i18n="illustrationWorksTitle">插画作品</h3>
+            <p data-i18n="illustrationWorksIntro">按时间从新到旧排列。</p>
+          </div>
+
+          <div class="illustration-masonry">
+            <a class="illustration-card" href="works/reconstructed-monet-spring.html">
+              <img src="assets/reconstructed-monet-spring.png" alt="「重构莫奈」春天 - BanG Dream 同人作品" />
+              <div>
+                <h4 data-i18n="illustMonetSpringTitle">「重构莫奈」春天</h4>
+                <p data-i18n="illustMonetSpringQuote">BanG Dream 同人作品</p>
+              </div>
+            </a>
+
+            <a class="illustration-card" href="works/reconstructed-monet-woman-with-parasol.html">
+              <img src="assets/reconstructed-monet-woman-with-parasol.png" alt="「重构莫奈」撑阳伞的女人 - BanG Dream 同人作品" />
+              <div>
+                <h4 data-i18n="illustMonetParasolTitle">「重构莫奈」撑阳伞的女人</h4>
+                <p data-i18n="illustMonetParasolQuote">BanG Dream 同人作品</p>
+              </div>
+            </a>
+
+            <a class="illustration-card" href="works/withered-willow-blooms.html">
+              <img src="assets/withered-willow-blooms.png" alt="枯杨生华，何可久也 - BanG Dream 同人作品" />
+              <div>
+                <h4 data-i18n="illustWillowTitle">枯杨生华，何可久也</h4>
+                <p data-i18n="illustWillowQuote">知是行之始，行是知之成</p>
+              </div>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="content-section split-section" id="skills">
+        <div class="section-heading">
+          <p class="eyebrow">Skills</p>
+          <h2>技能与教育</h2>
+        </div>
+
+        <div class="skill-columns">
+          <div>
+            <h3>核心技能</h3>
+            <div class="chips" aria-label="技能标签">
+              <span>项目管理</span>
+              <span>数据分析</span>
+              <span>用户研究</span>
+              <span>前端开发</span>
+              <span>英语沟通</span>
+              <span>跨团队协作</span>
+            </div>
+          </div>
+
+          <div>
+            <h3>教育背景</h3>
+            <p class="education-line">学校名称 · 专业名称 · 学位</p>
+            <p class="muted">2017 - 2021，可补充奖项、交换经历、证书或课程。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="contact-section" id="contact">
+        <div>
+          <p class="eyebrow">Contact</p>
+          <h2>让对方下一步很容易</h2>
+          <p>
+            这里放你的个人域名邮箱。等域名邮箱配置完成后，把全站的
+            <strong>hello@yourdomain.com</strong> 替换成你的真实地址。
+          </p>
+        </div>
+        <a class="primary-link" href="mailto:hello@yourdomain.com">发送邮件</a>
+      </section>
+    </main>
+
+    <div class="toast" role="status" aria-live="polite" hidden></div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
