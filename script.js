@@ -1,5 +1,6 @@
 const root = document.documentElement;
 const toast = document.querySelector(".toast");
+const hasTranslation = (dictionary, key) => Object.prototype.hasOwnProperty.call(dictionary, key);
 const i18n = {
   zh: {
     htmlLang: "zh-CN",
@@ -29,6 +30,25 @@ const i18n = {
     metricLanguagesLabel: "工作语言",
     metricFieldsValue: "2",
     metricFieldsLabel: "个专业方向",
+    skillsEyebrow: "Skills",
+    skillsTitle: "技能与教育",
+    coreSkillsTitle: "核心技能",
+    skillTagsAria: "技能标签",
+    skillProjectManagement: "项目管理",
+    skillJapaneseCommunication: "日语沟通",
+    skillCrossTeam: "跨团队协作",
+    skillIllustration: "插画设计",
+    skillGraphicDesign: "平面设计",
+    skillComposition: "作曲编曲",
+    educationTitle: "教育背景",
+    educationSenzoku: "洗足学园音乐大学 · 作曲 - 音响设计 · 硕士",
+    educationDcU: "大邱加图立大学 · 新媒体与游戏设计 · 学士",
+    educationGdfa: "广东省外语艺术职业学院 · 音乐教育 · 专科",
+    contactEyebrow: "Contact",
+    contactTitle: "让对方下一步很容易",
+    contactIntro: "可以通过个人域名邮箱",
+    contactOutro: "联系我。",
+    contactButton: "发送邮件",
     projectExperienceEyebrow: "Projects",
     projectExperienceTitle: "项目经历",
     expCmccAnnualTitle: "中国移动广东公司年会 - 誓师大会",
@@ -133,6 +153,25 @@ const i18n = {
     metricLanguagesLabel: "Working languages",
     metricFieldsValue: "2",
     metricFieldsLabel: "Study fields",
+    skillsEyebrow: "Skills",
+    skillsTitle: "Skills & Education",
+    coreSkillsTitle: "Core Skills",
+    skillTagsAria: "Skill tags",
+    skillProjectManagement: "Project Management",
+    skillJapaneseCommunication: "Japanese Communication",
+    skillCrossTeam: "Cross-Team Collaboration",
+    skillIllustration: "Illustration Design",
+    skillGraphicDesign: "Graphic Design",
+    skillComposition: "Composition & Arrangement",
+    educationTitle: "Education",
+    educationSenzoku: "Senzoku Gakuen College of Music · Composition - Sound Design · Master's",
+    educationDcU: "Catholic University of Daegu · New Media & Game Design · Bachelor's",
+    educationGdfa: "Guangdong Teachers College of Foreign Language and Arts · Music Education · Associate Degree",
+    contactEyebrow: "Contact",
+    contactTitle: "Make the next step easy",
+    contactIntro: "Reach me through my personal domain email",
+    contactOutro: "for inquiries.",
+    contactButton: "Send Email",
     projectExperienceEyebrow: "Projects",
     projectExperienceTitle: "Project Experience",
     expCmccAnnualTitle: "China Mobile Guangdong Annual Meeting - Kickoff Rally",
@@ -237,6 +276,25 @@ const i18n = {
     metricLanguagesLabel: "対応言語",
     metricFieldsValue: "2",
     metricFieldsLabel: "専門分野",
+    skillsEyebrow: "スキル",
+    skillsTitle: "スキルと学歴",
+    coreSkillsTitle: "主なスキル",
+    skillTagsAria: "スキルタグ",
+    skillProjectManagement: "プロジェクト管理",
+    skillJapaneseCommunication: "日本語コミュニケーション",
+    skillCrossTeam: "チーム横断連携",
+    skillIllustration: "イラスト制作",
+    skillGraphicDesign: "グラフィックデザイン",
+    skillComposition: "作編曲",
+    educationTitle: "学歴",
+    educationSenzoku: "洗足学園音楽大学 · 作曲 - 音響デザイン · 修士",
+    educationDcU: "大邱カトリック大学 · ニューメディア・ゲームデザイン · 学士",
+    educationGdfa: "広東省外語芸術職業学院 · 音楽教育 · 専科",
+    contactEyebrow: "連絡",
+    contactTitle: "次の連絡をしやすく",
+    contactIntro: "個人ドメインのメール",
+    contactOutro: "から連絡できます。",
+    contactButton: "メールを送る",
     projectExperienceEyebrow: "プロジェクト",
     projectExperienceTitle: "プロジェクト経歴",
     expCmccAnnualTitle: "中国移動広東公司 年次総会・決起大会",
@@ -337,14 +395,14 @@ function applyLanguage(language) {
 
   document.querySelectorAll("[data-i18n]").forEach((node) => {
     const key = node.dataset.i18n;
-    if (dictionary[key]) {
+    if (hasTranslation(dictionary, key)) {
       node.textContent = dictionary[key];
     }
   });
 
   document.querySelectorAll("[data-i18n-aria]").forEach((node) => {
     const key = node.dataset.i18nAria;
-    if (dictionary[key]) {
+    if (hasTranslation(dictionary, key)) {
       node.setAttribute("aria-label", dictionary[key]);
     }
   });
