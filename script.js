@@ -2,6 +2,7 @@ const root = document.documentElement;
 const toast = document.querySelector(".toast");
 const toolboxButton = document.querySelector('[data-action="toggle-toolbox"]');
 const toolboxPanel = document.querySelector("#toolbox-panel");
+const audioButton = document.querySelector('[data-action="audio-placeholder"]');
 const sceneStageHashes = new Map([
   ["#projects", 1],
   ["#experience", 2],
@@ -130,6 +131,7 @@ const i18n = {
     illustStoryboardTitle: "视觉小说分镜草图",
     illustStoryboardQuote: "“从镜头、姿态和场景关系开始寻找叙事节奏。”",
     copyEmail: "复制邮箱",
+    audioPlaceholder: "音乐占位开关",
     openToolbox: "打开链接工具箱",
     toggleTheme: "切换深浅色",
     emailCopied: "邮箱已复制",
@@ -256,6 +258,7 @@ const i18n = {
     illustStoryboardTitle: "Visual Novel Storyboard Sketch",
     illustStoryboardQuote: "\"Searching for narrative rhythm through camera, posture, and scene relationships.\"",
     copyEmail: "Copy email",
+    audioPlaceholder: "Music placeholder",
     openToolbox: "Open link toolbox",
     toggleTheme: "Toggle theme",
     emailCopied: "Email copied",
@@ -382,6 +385,7 @@ const i18n = {
     illustStoryboardTitle: "ビジュアルノベル絵コンテラフ",
     illustStoryboardQuote: "「カメラ、姿勢、場面関係から物語のリズムを探す。」",
     copyEmail: "メールをコピー",
+    audioPlaceholder: "音楽プレースホルダー",
     openToolbox: "リンクツールボックスを開く",
     toggleTheme: "テーマ切替",
     emailCopied: "メールをコピーしました",
@@ -394,6 +398,7 @@ const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 let currentLanguage = "zh";
 let illustrationLayoutFrame = 0;
 let localTimeTimer;
+let toolboxCloseTimer;
 
 if (storedTheme) {
   root.dataset.theme = storedTheme;
@@ -464,16 +469,38 @@ function toggleTheme() {
 function closeToolbox() {
   if (!toolboxPanel || !toolboxButton) return;
 
-  toolboxPanel.hidden = true;
+  window.clearTimeout(toolboxCloseTimer);
+  toolboxPanel.classList.remove("is-open");
   toolboxButton.setAttribute("aria-expanded", "false");
+  toolboxCloseTimer = window.setTimeout(() => {
+    if (!toolboxPanel.classList.contains("is-open")) {
+      toolboxPanel.hidden = true;
+    }
+  }, 240);
 }
 
 function toggleToolbox() {
   if (!toolboxPanel || !toolboxButton) return;
 
   const shouldOpen = toolboxPanel.hidden;
-  toolboxPanel.hidden = !shouldOpen;
+  window.clearTimeout(toolboxCloseTimer);
+  if (shouldOpen) {
+    toolboxPanel.hidden = false;
+    window.requestAnimationFrame(() => {
+      toolboxPanel.classList.add("is-open");
+    });
+  } else {
+    closeToolbox();
+  }
   toolboxButton.setAttribute("aria-expanded", String(shouldOpen));
+}
+
+function toggleAudioPlaceholder() {
+  if (!audioButton) return;
+
+  const nextState = !audioButton.classList.contains("is-collapsed");
+  audioButton.classList.toggle("is-collapsed", nextState);
+  audioButton.setAttribute("aria-pressed", String(nextState));
 }
 
 function getSceneStageScrollTop(stageIndex) {
@@ -701,11 +728,17 @@ document.addEventListener("click", (event) => {
     copyEmail();
   }
 
+  if (action === "audio-placeholder") {
+    closeToolbox();
+    toggleAudioPlaceholder();
+  }
+
   if (action === "toggle-toolbox") {
     toggleToolbox();
   }
 
   if (action === "theme") {
+    closeToolbox();
     toggleTheme();
   }
 });

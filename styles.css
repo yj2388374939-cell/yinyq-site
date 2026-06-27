@@ -326,20 +326,88 @@ a {
   stroke-width: 1.8;
 }
 
+.toolbox-trigger rect {
+  fill: currentColor;
+  stroke: none;
+}
+
+.audio-button {
+  overflow: hidden;
+  color: #17bed8;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    color 180ms ease,
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.audio-button.is-collapsed {
+  border-color: #050807;
+  background: #050807;
+  color: #f7faf8;
+}
+
+.audio-button .sound-wave-icon {
+  width: 21px;
+  height: 21px;
+}
+
+.audio-button .sound-bar {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  transition:
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 180ms ease;
+}
+
+.audio-button.is-collapsed .sound-bar-1 {
+  transform: translateX(5px) scaleY(0.45);
+}
+
+.audio-button.is-collapsed .sound-bar-2 {
+  transform: translateX(2.5px) scaleY(0.58);
+}
+
+.audio-button.is-collapsed .sound-bar-3 {
+  transform: scaleY(0.68);
+}
+
+.audio-button.is-collapsed .sound-bar-4 {
+  transform: translateX(-2.5px) scaleY(0.58);
+}
+
+.audio-button.is-collapsed .sound-bar-5 {
+  transform: translateX(-5px) scaleY(0.45);
+}
+
 .toolbox-popover {
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
   z-index: 30;
-  width: 238px;
+  width: 224px;
   padding: 18px;
-  border: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, #050807);
   border-radius: var(--radius);
   background:
-    linear-gradient(145deg, rgba(19, 213, 246, 0.92), rgba(15, 118, 110, 0.82)),
-    linear-gradient(315deg, rgba(255, 255, 255, 0.25), transparent 54%);
-  box-shadow: 0 20px 44px rgba(20, 31, 31, 0.22);
+    linear-gradient(145deg, rgba(11, 88, 83, 0.98), rgba(31, 58, 54, 0.98)),
+    linear-gradient(315deg, color-mix(in srgb, var(--warm) 18%, transparent), transparent 54%);
+  box-shadow: 0 22px 44px rgba(20, 31, 31, 0.24);
   color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(0, -14px, 0) scale(0.96);
+  transform-origin: top right;
+  transition:
+    opacity 220ms ease,
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.toolbox-popover.is-open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate3d(0, 0, 0) scale(1);
 }
 
 .toolbox-popover[hidden] {
@@ -364,20 +432,26 @@ a {
 .toolbox-links {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 .toolbox-links a {
   display: grid;
-  min-height: 54px;
+  width: 82px;
+  aspect-ratio: 1;
   place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius);
   background: #050807;
   color: #fff;
-  font-size: 0.86rem;
-  font-weight: 900;
   text-align: center;
+}
+
+.toolbox-links img {
+  display: block;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
 .toolbox-links a:hover,
@@ -1134,7 +1208,7 @@ h3 {
   }
 
   .toolbox-popover {
-    width: min(238px, calc(100vw - 36px));
+    width: min(224px, calc(100vw - 36px));
   }
 
   .profile-section,
