@@ -12,7 +12,9 @@ const sceneStageHashes = new Map([
 ]);
 const scenePanelCount = 4;
 const sceneWheelGestureMs = 680;
+const portfolioEntryGuardMs = 1150;
 let sceneWheelHandledUntil = 0;
+let portfolioEntryGuardUntil = 0;
 const hasTranslation = (dictionary, key) => Object.prototype.hasOwnProperty.call(dictionary, key);
 const i18n = {
   zh: {
@@ -578,6 +580,12 @@ function setupHomeMotion() {
     root.style.setProperty("--portfolio-opacity", wideQuery.matches ? "0.1" : "1");
     root.style.setProperty("--portfolio-blur", wideQuery.matches ? "3px" : "0px");
   };
+  const resetPortfolioPageTop = () => {
+    portfolioPage?.scrollTo({
+      top: 0,
+      behavior: "auto",
+    });
+  };
 
   if (motionQuery.matches || !introSwitch || !sceneTrack) {
     root.classList.add("is-ready");
@@ -609,15 +617,6 @@ function setupHomeMotion() {
 
     if (!direction) return;
 
-    const boundaryPad = 18;
-    const inSnapRange =
-      currentY >= firstPoint - boundaryPad &&
-      currentY <= lastPoint + boundaryPad &&
-      !(currentY <= firstPoint + boundaryPad && direction < 0) &&
-      !(currentY >= lastPoint - boundaryPad && direction > 0);
-
-    if (!inSnapRange) return;
-
     const currentIndex = snapPoints.reduce((nearestIndex, point, index) => {
       const nearestDistance = Math.abs(currentY - snapPoints[nearestIndex]);
       const distance = Math.abs(currentY - point);
@@ -626,7 +625,23 @@ function setupHomeMotion() {
     const isPortfolioStage = currentIndex === scenePanelCount - 1;
     const portfolioWheelTarget = event.target.closest?.(".portfolio-page");
 
+    const boundaryPad = 18;
+    const inSnapRange =
+      currentY >= firstPoint - boundaryPad &&
+      currentY <= lastPoint + boundaryPad &&
+      !(currentY <= firstPoint + boundaryPad && direction < 0) &&
+      !(currentY >= lastPoint - boundaryPad && direction > 0 && !(isPortfolioStage && portfolioWheelTarget));
+
+    if (!inSnapRange) return;
+
+    const now = performance.now();
+
     if (isPortfolioStage && portfolioPage && portfolioWheelTarget) {
+      if (direction > 0 && now < portfolioEntryGuardUntil) {
+        event.preventDefault();
+        return;
+      }
+
       const canScrollDown = portfolioPage.scrollTop + portfolioPage.clientHeight < portfolioPage.scrollHeight - 2;
       const canScrollUp = portfolioPage.scrollTop > 2;
 
@@ -637,13 +652,18 @@ function setupHomeMotion() {
 
     event.preventDefault();
 
-    const now = performance.now();
     if (now < sceneWheelHandledUntil) {
       return;
     }
 
     sceneWheelHandledUntil = now + sceneWheelGestureMs;
     const nextIndex = clamp(currentIndex + direction, 0, snapPoints.length - 1);
+
+    if (nextIndex === scenePanelCount - 1 && currentIndex < nextIndex) {
+      portfolioEntryGuardUntil = now + portfolioEntryGuardMs;
+      resetPortfolioPageTop();
+      window.setTimeout(resetPortfolioPageTop, 520);
+    }
 
     scrollToScenePoint(snapPoints[nextIndex]);
   };
