@@ -9,6 +9,9 @@
     />
     <title>殷雲清 | 个人简历</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <script>
+      document.documentElement.classList.add("js");
+    </script>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -19,8 +22,8 @@
       </a>
 
       <nav class="nav" aria-label="主导航">
-        <a href="#experience" data-i18n="navExperience">经历</a>
         <a href="#projects" data-i18n="navProjects">项目</a>
+        <a href="#experience" data-i18n="navExperience">经历</a>
         <a href="#works" data-i18n="navWorks">作品</a>
         <a href="#skills" data-i18n="navSkills">技能</a>
         <a href="#contact" data-i18n="navContact">联系</a>
@@ -61,63 +64,109 @@
     </header>
 
     <main id="top">
-      <section class="profile-section" aria-labelledby="profile-title">
-        <div class="profile-copy">
-          <p class="eyebrow" data-i18n="profileEyebrow">个人简历 / Portfolio</p>
-          <h1 id="profile-title" data-i18n="profileName">殷雲清</h1>
-          <p class="alias-line">
-            <span data-i18n="aliasIntro">你可以称呼我</span>
-            <strong data-i18n="primaryAliases">殷雲清 / JAN WANCING / ヤン・ワンチン</strong>
-          </p>
-          <p class="common-name" data-i18n="commonAliases">
-            张云恺 / Klaus Zhang / ZHANG YUNKAI / チョウ・ウンカイ
-          </p>
-          <p class="role" data-i18n="role">作编曲 / 音响设计 / 平面设计 / 插画</p>
-          <p class="summary" data-i18n="summary">
-            关注声音、视觉与互动体验之间的叙事关系，持续创作音乐、声音设计、平面设计与插画项目。
-          </p>
+      <section class="home-stage" aria-label="首页概览">
+        <section class="profile-section" aria-labelledby="profile-title">
+          <div class="profile-copy">
+            <p class="eyebrow" data-i18n="profileEyebrow">个人简历 / Portfolio</p>
+            <h1 id="profile-title" data-i18n="profileName">殷雲清</h1>
+            <p class="alias-line">
+              <span data-i18n="aliasIntro">你可以称呼我</span>
+              <strong data-i18n="primaryAliases">殷雲清 / JAN WANCING / ヤン・ワンチン</strong>
+            </p>
+            <p class="common-name" data-i18n="commonAliases">
+              张云恺 / Klaus Zhang / ZHANG YUNKAI / チョウ・ウンカイ
+            </p>
+            <p class="role" data-i18n="role">作编曲 / 音响设计 / 平面设计 / 插画</p>
+            <p class="summary" data-i18n="summary">
+              关注声音、视觉与互动体验之间的叙事关系，持续创作音乐、声音设计、平面设计与插画项目。
+            </p>
 
-          <div class="contact-strip" aria-label="核心联系方式">
-            <span data-i18n="newMedia">New Media & Game Design @ KR DCU</span>
-            <span data-i18n="soundDesign">Sound Design @ Senzoku Gakuen</span>
+            <div class="contact-strip" aria-label="核心联系方式">
+              <span data-i18n="newMedia">New Media & Game Design @ KR DCU</span>
+              <span data-i18n="soundDesign">Sound Design @ Senzoku Gakuen</span>
+            </div>
           </div>
-        </div>
 
-        <div class="profile-side">
-          <div class="profile-visual">
-            <div class="portrait-frame">
-              <div class="portrait-card">
-                <img class="portrait-image" src="assets/yinyunqing.jpg" alt="殷雲清个人标识" />
-                <span class="portrait-line"></span>
-                <span class="portrait-caption" data-i18n="portraitCaption">个人标识 / YINYUNQING</span>
+          <div class="profile-side">
+            <div class="profile-visual">
+              <div class="portrait-frame">
+                <div class="portrait-card">
+                  <img class="portrait-image" src="assets/yinyunqing.jpg" alt="殷雲清个人标识" />
+                  <span class="portrait-line"></span>
+                  <span class="portrait-caption" data-i18n="portraitCaption">个人标识 / YINYUNQING</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <aside class="local-time-card" aria-live="polite">
-            <div class="local-time-header">
-              <span class="local-time-label" data-i18n="localTimeTitle">我所在的时间</span>
-              <span class="local-time-zone" data-i18n="localTimeZone">北京时间 / UTC+8</span>
-            </div>
-            <time class="local-time-value" data-beijing-time datetime=""></time>
-            <span class="local-time-date" data-beijing-date></span>
-          </aside>
-        </div>
+            <aside class="local-time-card" aria-live="polite">
+              <div class="local-time-header">
+                <span class="local-time-label" data-i18n="localTimeTitle">我所在的时间</span>
+                <span class="local-time-zone" data-i18n="localTimeZone">北京时间 / UTC+8</span>
+              </div>
+              <time class="local-time-value" data-beijing-time datetime=""></time>
+              <span class="local-time-date" data-beijing-date></span>
+            </aside>
+          </div>
+        </section>
+
+        <section class="section-grid" aria-label="简历概览">
+          <article class="metric">
+            <span class="metric-value" data-i18n="metricProjectsValue">6</span>
+            <span class="metric-label" data-i18n="metricProjectsLabel">个项目</span>
+          </article>
+          <article class="metric">
+            <span class="metric-value" data-i18n="metricLanguagesValue">CN / JP / EN</span>
+            <span class="metric-label" data-i18n="metricLanguagesLabel">工作语言</span>
+          </article>
+          <article class="metric">
+            <span class="metric-value" data-i18n="metricFieldsValue">2</span>
+            <span class="metric-label" data-i18n="metricFieldsLabel">个专业方向</span>
+          </article>
+        </section>
       </section>
 
-      <section class="section-grid" aria-label="简历概览">
-        <article class="metric">
-          <span class="metric-value" data-i18n="metricProjectsValue">6</span>
-          <span class="metric-label" data-i18n="metricProjectsLabel">个项目</span>
-        </article>
-        <article class="metric">
-          <span class="metric-value" data-i18n="metricLanguagesValue">CN / JP / EN</span>
-          <span class="metric-label" data-i18n="metricLanguagesLabel">工作语言</span>
-        </article>
-        <article class="metric">
-          <span class="metric-value" data-i18n="metricFieldsValue">2</span>
-          <span class="metric-label" data-i18n="metricFieldsLabel">个专业方向</span>
-        </article>
+      <section class="content-section" id="projects">
+        <div class="section-heading stacked-heading">
+          <p class="eyebrow" data-i18n="featuredProjectsEyebrow">Projects</p>
+          <h2 data-i18n="featuredProjectsTitle">重点项目</h2>
+        </div>
+
+        <div class="featured-project">
+          <p class="project-tag" data-i18n="studioTag">Independent Game Studio</p>
+          <h3 data-i18n="studioTitle">独立游戏工作室</h3>
+          <p data-i18n="studioDescription">
+            与三名合伙人一起创建独立游戏工作室，作为音乐和插画担当。目前正在进行视觉小说游戏、卡牌游戏、类恶魔城游戏开发。
+          </p>
+        </div>
+
+        <div class="project-grid">
+          <article class="project-card">
+            <img src="assets/visual-novel-character.png" alt="视觉小说游戏角色设定图" />
+            <div>
+              <p class="project-tag">Visual Novel</p>
+              <h3 data-i18n="visualNovelTitle">视觉小说游戏</h3>
+              <p data-i18n="visualNovelDescription">参与项目概念推进、视觉方向讨论与音乐氛围设计。</p>
+            </div>
+          </article>
+
+          <article class="project-card">
+            <img src="assets/game-illustration.png" alt="游戏角色插画" />
+            <div>
+              <p class="project-tag">Card Game</p>
+              <h3 data-i18n="cardGameTitle">卡牌游戏</h3>
+              <p data-i18n="cardGameDescription">负责角色插画、视觉素材与声音气质的协同设计。</p>
+            </div>
+          </article>
+
+          <article class="project-card">
+            <img src="assets/adaptive-music-unity.png" alt="Unity 中的自适应音乐测试界面" />
+            <div>
+              <p class="project-tag">Metroidvania</p>
+              <h3 data-i18n="metroidvaniaTitle">类恶魔城游戏</h3>
+              <p data-i18n="metroidvaniaDescription">进行游戏配乐、战斗段落音乐逻辑与动态音乐测试。</p>
+            </div>
+          </article>
+        </div>
       </section>
 
       <section class="content-section" id="experience">
@@ -172,50 +221,6 @@
             <div class="timeline-body">
               <h3 data-i18n="expCmccAnnualTitle">中国移动广东公司年会 - 誓师大会</h3>
               <p class="project-role" data-i18n="expCmccAnnualRole">音响调度</p>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section class="content-section" id="projects">
-        <div class="section-heading stacked-heading">
-          <p class="eyebrow" data-i18n="featuredProjectsEyebrow">Projects</p>
-          <h2 data-i18n="featuredProjectsTitle">重点项目</h2>
-        </div>
-
-        <div class="featured-project">
-          <p class="project-tag" data-i18n="studioTag">Independent Game Studio</p>
-          <h3 data-i18n="studioTitle">独立游戏工作室</h3>
-          <p data-i18n="studioDescription">
-            与三名合伙人一起创建独立游戏工作室，作为音乐和插画担当。目前正在进行视觉小说游戏、卡牌游戏、类恶魔城游戏开发。
-          </p>
-        </div>
-
-        <div class="project-grid">
-          <article class="project-card">
-            <img src="assets/visual-novel-character.png" alt="视觉小说游戏角色设定图" />
-            <div>
-              <p class="project-tag">Visual Novel</p>
-              <h3 data-i18n="visualNovelTitle">视觉小说游戏</h3>
-              <p data-i18n="visualNovelDescription">参与项目概念推进、视觉方向讨论与音乐氛围设计。</p>
-            </div>
-          </article>
-
-          <article class="project-card">
-            <img src="assets/game-illustration.png" alt="游戏角色插画" />
-            <div>
-              <p class="project-tag">Card Game</p>
-              <h3 data-i18n="cardGameTitle">卡牌游戏</h3>
-              <p data-i18n="cardGameDescription">负责角色插画、视觉素材与声音气质的协同设计。</p>
-            </div>
-          </article>
-
-          <article class="project-card">
-            <img src="assets/adaptive-music-unity.png" alt="Unity 中的自适应音乐测试界面" />
-            <div>
-              <p class="project-tag">Metroidvania</p>
-              <h3 data-i18n="metroidvaniaTitle">类恶魔城游戏</h3>
-              <p data-i18n="metroidvaniaDescription">进行游戏配乐、战斗段落音乐逻辑与动态音乐测试。</p>
             </div>
           </article>
         </div>

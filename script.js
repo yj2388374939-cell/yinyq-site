@@ -383,6 +383,7 @@ const i18n = {
 };
 
 const storedTheme = localStorage.getItem("resume-theme");
+const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 let currentLanguage = "zh";
 let illustrationLayoutFrame = 0;
 let localTimeTimer;
@@ -451,6 +452,54 @@ function toggleTheme() {
   const nextTheme = root.dataset.theme === "dark" ? "light" : "dark";
   root.dataset.theme = nextTheme;
   localStorage.setItem("resume-theme", nextTheme);
+}
+
+function setupHomeMotion() {
+  const projectsSection = document.querySelector("#projects");
+
+  if (motionQuery.matches) {
+    root.classList.add("is-ready");
+    projectsSection?.classList.add("is-visible");
+    return;
+  }
+
+  const showProjects = () => {
+    projectsSection?.classList.add("is-visible");
+    root.classList.add("projects-entered");
+  };
+
+  const updateHomeExit = () => {
+    root.classList.toggle("home-exiting", window.scrollY > 32);
+  };
+
+  updateHomeExit();
+  window.addEventListener("scroll", updateHomeExit, { passive: true });
+  window.addEventListener("resize", updateHomeExit);
+
+  if (projectsSection && "IntersectionObserver" in window) {
+    const projectObserver = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        showProjects();
+        projectObserver.disconnect();
+      },
+      {
+        rootMargin: "0px 0px -8% 0px",
+        threshold: 0.04,
+      },
+    );
+
+    projectObserver.observe(projectsSection);
+  } else {
+    showProjects();
+  }
+
+  window.setTimeout(() => {
+    window.requestAnimationFrame(() => {
+      root.classList.add("is-ready");
+      updateHomeExit();
+    });
+  }, 160);
 }
 
 function layoutIllustrationMasonry() {
@@ -560,5 +609,6 @@ document.addEventListener("click", (event) => {
 });
 
 applyLanguage(localStorage.getItem("resume-language") || "zh");
+setupHomeMotion();
 setupIllustrationMasonry();
 setupLocalTime();
