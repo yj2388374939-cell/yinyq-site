@@ -454,50 +454,92 @@ function toggleTheme() {
   localStorage.setItem("resume-theme", nextTheme);
 }
 
-function setupHomeMotion() {
-  const projectsSection = document.querySelector("#projects");
+function getProjectStageScrollTop() {
+  const introSwitch = document.querySelector(".intro-switch");
+  if (!introSwitch) return null;
 
-  if (motionQuery.matches) {
+  const stickyHeight = Math.max(1, window.innerHeight - 72);
+  return introSwitch.offsetTop + Math.max(1, introSwitch.offsetHeight - stickyHeight);
+}
+
+function scrollToProjectStage(behavior = "smooth") {
+  const top = getProjectStageScrollTop();
+  if (top === null) return false;
+
+  window.scrollTo({
+    top,
+    behavior: motionQuery.matches ? "auto" : behavior,
+  });
+  return true;
+}
+
+function setupHomeMotion() {
+  const introSwitch = document.querySelector(".intro-switch");
+  const projectsSection = document.querySelector("#projects");
+  const wideQuery = window.matchMedia("(min-width: 861px)");
+
+  const resetStage = () => {
+    root.style.setProperty("--home-x", "0vw");
+    root.style.setProperty("--home-scale", "1");
+    root.style.setProperty("--home-opacity", "1");
+    root.style.setProperty("--home-blur", "0px");
+    root.style.setProperty("--project-x", wideQuery.matches ? "104vw" : "0vw");
+    root.style.setProperty("--project-opacity", wideQuery.matches ? "0.1" : "1");
+    root.style.setProperty("--project-blur", wideQuery.matches ? "3px" : "0px");
+  };
+
+  if (motionQuery.matches || !introSwitch) {
     root.classList.add("is-ready");
     projectsSection?.classList.add("is-visible");
+    resetStage();
     return;
   }
 
-  const showProjects = () => {
-    projectsSection?.classList.add("is-visible");
-    root.classList.add("projects-entered");
+  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+  const easeOutCubic = (value) => 1 - Math.pow(1 - value, 3);
+
+  const updateStage = () => {
+    if (!wideQuery.matches) {
+      root.classList.remove("home-exiting");
+      projectsSection?.classList.add("is-visible");
+      resetStage();
+      return;
+    }
+
+    const stickyHeight = Math.max(1, window.innerHeight - 72);
+    const start = introSwitch.offsetTop - 72;
+    const distance = Math.max(1, introSwitch.offsetHeight - stickyHeight);
+    const progress = clamp((window.scrollY - start) / distance, 0, 1);
+    const eased = easeOutCubic(progress);
+
+    root.style.setProperty("--home-x", `${(-108 * eased).toFixed(2)}vw`);
+    root.style.setProperty("--home-scale", (1 - 0.02 * eased).toFixed(4));
+    root.style.setProperty("--home-opacity", Math.max(0, 1 - progress * 1.15).toFixed(3));
+    root.style.setProperty("--home-blur", `${(2 * eased).toFixed(2)}px`);
+    root.style.setProperty("--project-x", `${(104 * (1 - eased)).toFixed(2)}vw`);
+    root.style.setProperty("--project-opacity", Math.min(1, 0.1 + progress * 1.2).toFixed(3));
+    root.style.setProperty("--project-blur", `${(3 * (1 - eased)).toFixed(2)}px`);
+    root.classList.toggle("home-exiting", progress > 0.02);
+    projectsSection?.classList.toggle("is-visible", progress > 0.02);
+
+    if (progress > 0.02) {
+      root.classList.add("projects-entered");
+    }
   };
 
-  const updateHomeExit = () => {
-    root.classList.toggle("home-exiting", window.scrollY > 32);
-  };
-
-  updateHomeExit();
-  window.addEventListener("scroll", updateHomeExit, { passive: true });
-  window.addEventListener("resize", updateHomeExit);
-
-  if (projectsSection && "IntersectionObserver" in window) {
-    const projectObserver = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((entry) => entry.isIntersecting)) return;
-        showProjects();
-        projectObserver.disconnect();
-      },
-      {
-        rootMargin: "0px 0px -8% 0px",
-        threshold: 0.04,
-      },
-    );
-
-    projectObserver.observe(projectsSection);
-  } else {
-    showProjects();
-  }
+  resetStage();
+  updateStage();
+  window.addEventListener("scroll", updateStage, { passive: true });
+  window.addEventListener("resize", updateStage);
 
   window.setTimeout(() => {
     window.requestAnimationFrame(() => {
       root.classList.add("is-ready");
-      updateHomeExit();
+      updateStage();
+
+      if (window.location.hash === "#projects") {
+        scrollToProjectStage("auto");
+      }
     });
   }, 160);
 }
@@ -583,6 +625,14 @@ function setupLocalTime() {
 }
 
 document.addEventListener("click", (event) => {
+  const anchor = event.target.closest('a[href="#projects"]');
+  if (anchor) {
+    event.preventDefault();
+    window.history.pushState(null, "", "#projects");
+    scrollToProjectStage();
+    return;
+  }
+
   const languageButton = event.target.closest("[data-lang]");
   if (languageButton) {
     applyLanguage(languageButton.dataset.lang);
