@@ -1,5 +1,12 @@
 const root = document.documentElement;
 const toast = document.querySelector(".toast");
+const toolboxButton = document.querySelector('[data-action="toggle-toolbox"]');
+const toolboxPanel = document.querySelector("#toolbox-panel");
+const sceneStageHashes = new Map([
+  ["#projects", 1],
+  ["#experience", 2],
+]);
+const scenePanelCount = 3;
 const hasTranslation = (dictionary, key) => Object.prototype.hasOwnProperty.call(dictionary, key);
 const i18n = {
   zh: {
@@ -123,7 +130,7 @@ const i18n = {
     illustStoryboardTitle: "视觉小说分镜草图",
     illustStoryboardQuote: "“从镜头、姿态和场景关系开始寻找叙事节奏。”",
     copyEmail: "复制邮箱",
-    printResume: "打印简历",
+    openToolbox: "打开链接工具箱",
     toggleTheme: "切换深浅色",
     emailCopied: "邮箱已复制",
     emailCopyLimited: "复制受限，请手动复制：",
@@ -249,7 +256,7 @@ const i18n = {
     illustStoryboardTitle: "Visual Novel Storyboard Sketch",
     illustStoryboardQuote: "\"Searching for narrative rhythm through camera, posture, and scene relationships.\"",
     copyEmail: "Copy email",
-    printResume: "Print resume",
+    openToolbox: "Open link toolbox",
     toggleTheme: "Toggle theme",
     emailCopied: "Email copied",
     emailCopyLimited: "Copy blocked. Copy manually: ",
@@ -375,7 +382,7 @@ const i18n = {
     illustStoryboardTitle: "ビジュアルノベル絵コンテラフ",
     illustStoryboardQuote: "「カメラ、姿勢、場面関係から物語のリズムを探す。」",
     copyEmail: "メールをコピー",
-    printResume: "印刷",
+    openToolbox: "リンクツールボックスを開く",
     toggleTheme: "テーマ切替",
     emailCopied: "メールをコピーしました",
     emailCopyLimited: "コピーできません。手動でコピーしてください：",
@@ -454,16 +461,34 @@ function toggleTheme() {
   localStorage.setItem("resume-theme", nextTheme);
 }
 
-function getProjectStageScrollTop() {
+function closeToolbox() {
+  if (!toolboxPanel || !toolboxButton) return;
+
+  toolboxPanel.hidden = true;
+  toolboxButton.setAttribute("aria-expanded", "false");
+}
+
+function toggleToolbox() {
+  if (!toolboxPanel || !toolboxButton) return;
+
+  const shouldOpen = toolboxPanel.hidden;
+  toolboxPanel.hidden = !shouldOpen;
+  toolboxButton.setAttribute("aria-expanded", String(shouldOpen));
+}
+
+function getSceneStageScrollTop(stageIndex) {
   const introSwitch = document.querySelector(".intro-switch");
   if (!introSwitch) return null;
 
   const stickyHeight = Math.max(1, window.innerHeight - 72);
-  return introSwitch.offsetTop + Math.max(1, introSwitch.offsetHeight - stickyHeight);
+  const start = introSwitch.offsetTop - 72;
+  const distance = Math.max(1, introSwitch.offsetHeight - stickyHeight);
+  const progress = stageIndex / Math.max(1, scenePanelCount - 1);
+  return start + distance * progress;
 }
 
-function scrollToProjectStage(behavior = "smooth") {
-  const top = getProjectStageScrollTop();
+function scrollToSceneStage(stageIndex, behavior = "smooth") {
+  const top = getSceneStageScrollTop(stageIndex);
   if (top === null) return false;
 
   window.scrollTo({
@@ -475,22 +500,25 @@ function scrollToProjectStage(behavior = "smooth") {
 
 function setupHomeMotion() {
   const introSwitch = document.querySelector(".intro-switch");
+  const sceneTrack = document.querySelector(".scene-track");
   const projectsSection = document.querySelector("#projects");
+  const experienceSection = document.querySelector("#experience");
   const wideQuery = window.matchMedia("(min-width: 861px)");
 
   const resetStage = () => {
-    root.style.setProperty("--home-x", "0vw");
-    root.style.setProperty("--home-scale", "1");
+    root.style.setProperty("--scene-x", "0vw");
     root.style.setProperty("--home-opacity", "1");
     root.style.setProperty("--home-blur", "0px");
-    root.style.setProperty("--project-x", wideQuery.matches ? "104vw" : "0vw");
     root.style.setProperty("--project-opacity", wideQuery.matches ? "0.1" : "1");
     root.style.setProperty("--project-blur", wideQuery.matches ? "3px" : "0px");
+    root.style.setProperty("--experience-opacity", wideQuery.matches ? "0.1" : "1");
+    root.style.setProperty("--experience-blur", wideQuery.matches ? "3px" : "0px");
   };
 
-  if (motionQuery.matches || !introSwitch) {
+  if (motionQuery.matches || !introSwitch || !sceneTrack) {
     root.classList.add("is-ready");
     projectsSection?.classList.add("is-visible");
+    experienceSection?.classList.add("is-visible");
     resetStage();
     return;
   }
@@ -501,7 +529,9 @@ function setupHomeMotion() {
   const updateStage = () => {
     if (!wideQuery.matches) {
       root.classList.remove("home-exiting");
+      root.classList.remove("projects-exiting");
       projectsSection?.classList.add("is-visible");
+      experienceSection?.classList.add("is-visible");
       resetStage();
       return;
     }
@@ -510,20 +540,35 @@ function setupHomeMotion() {
     const start = introSwitch.offsetTop - 72;
     const distance = Math.max(1, introSwitch.offsetHeight - stickyHeight);
     const progress = clamp((window.scrollY - start) / distance, 0, 1);
-    const eased = easeOutCubic(progress);
+    const pageProgress = progress * (scenePanelCount - 1);
+    const firstTransition = clamp(pageProgress, 0, 1);
+    const secondTransition = clamp(pageProgress - 1, 0, 1);
+    const firstEase = easeOutCubic(firstTransition);
+    const secondEase = easeOutCubic(secondTransition);
+    const scenePosition = firstEase + secondEase;
 
-    root.style.setProperty("--home-x", `${(-108 * eased).toFixed(2)}vw`);
-    root.style.setProperty("--home-scale", (1 - 0.02 * eased).toFixed(4));
-    root.style.setProperty("--home-opacity", Math.max(0, 1 - progress * 1.15).toFixed(3));
-    root.style.setProperty("--home-blur", `${(2 * eased).toFixed(2)}px`);
-    root.style.setProperty("--project-x", `${(104 * (1 - eased)).toFixed(2)}vw`);
-    root.style.setProperty("--project-opacity", Math.min(1, 0.1 + progress * 1.2).toFixed(3));
-    root.style.setProperty("--project-blur", `${(3 * (1 - eased)).toFixed(2)}px`);
-    root.classList.toggle("home-exiting", progress > 0.02);
-    projectsSection?.classList.toggle("is-visible", progress > 0.02);
+    const projectOpacity =
+      pageProgress <= 1 ? Math.min(1, 0.1 + firstTransition * 1.2) : Math.max(0, 1 - secondTransition * 1.15);
+    const projectBlur = pageProgress <= 1 ? 3 * (1 - firstEase) : 2 * secondEase;
 
-    if (progress > 0.02) {
+    root.style.setProperty("--scene-x", `${(-100 * scenePosition).toFixed(2)}vw`);
+    root.style.setProperty("--home-opacity", Math.max(0, 1 - firstTransition * 1.15).toFixed(3));
+    root.style.setProperty("--home-blur", `${(2 * firstEase).toFixed(2)}px`);
+    root.style.setProperty("--project-opacity", projectOpacity.toFixed(3));
+    root.style.setProperty("--project-blur", `${projectBlur.toFixed(2)}px`);
+    root.style.setProperty("--experience-opacity", Math.min(1, 0.1 + secondTransition * 1.2).toFixed(3));
+    root.style.setProperty("--experience-blur", `${(3 * (1 - secondEase)).toFixed(2)}px`);
+    root.classList.toggle("home-exiting", firstTransition > 0.02);
+    root.classList.toggle("projects-exiting", secondTransition > 0.02);
+    projectsSection?.classList.toggle("is-visible", firstTransition > 0.02 && secondTransition < 0.98);
+    experienceSection?.classList.toggle("is-visible", secondTransition > 0.02);
+
+    if (firstTransition > 0.02) {
       root.classList.add("projects-entered");
+    }
+
+    if (secondTransition > 0.02) {
+      root.classList.add("experience-entered");
     }
   };
 
@@ -537,8 +582,9 @@ function setupHomeMotion() {
       root.classList.add("is-ready");
       updateStage();
 
-      if (window.location.hash === "#projects") {
-        scrollToProjectStage("auto");
+      const initialStage = sceneStageHashes.get(window.location.hash);
+      if (initialStage) {
+        scrollToSceneStage(initialStage, "auto");
       }
     });
   }, 160);
@@ -625,11 +671,12 @@ function setupLocalTime() {
 }
 
 document.addEventListener("click", (event) => {
-  const anchor = event.target.closest('a[href="#projects"]');
-  if (anchor) {
+  const anchor = event.target.closest("a[href]");
+  const stageIndex = anchor ? sceneStageHashes.get(anchor.getAttribute("href")) : null;
+  if (stageIndex && window.matchMedia("(min-width: 861px)").matches && !motionQuery.matches) {
     event.preventDefault();
-    window.history.pushState(null, "", "#projects");
-    scrollToProjectStage();
+    window.history.pushState(null, "", anchor.getAttribute("href"));
+    scrollToSceneStage(stageIndex);
     return;
   }
 
@@ -641,7 +688,12 @@ document.addEventListener("click", (event) => {
   }
 
   const button = event.target.closest("[data-action]");
-  if (!button) return;
+  if (!button) {
+    if (!event.target.closest(".toolbox-wrap")) {
+      closeToolbox();
+    }
+    return;
+  }
 
   const action = button.dataset.action;
 
@@ -649,12 +701,18 @@ document.addEventListener("click", (event) => {
     copyEmail();
   }
 
-  if (action === "print") {
-    window.print();
+  if (action === "toggle-toolbox") {
+    toggleToolbox();
   }
 
   if (action === "theme") {
     toggleTheme();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeToolbox();
   }
 });
 

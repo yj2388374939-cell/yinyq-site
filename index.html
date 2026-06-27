@@ -12,7 +12,7 @@
     <script>
       document.documentElement.classList.add("js");
     </script>
-    <link rel="stylesheet" href="styles.css?v=20260628-scene" />
+    <link rel="stylesheet" href="styles.css?v=20260628-pages" />
   </head>
   <body>
     <header class="site-header">
@@ -48,13 +48,39 @@
             <path d="m4 7 8 6 8-6" />
           </svg>
         </button>
-        <button class="icon-button" type="button" data-action="print" aria-label="打印简历" data-i18n-aria="printResume">
-          <svg aria-hidden="true" viewBox="0 0 24 24">
-            <path d="M7 8V4h10v4" />
-            <path d="M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2" />
-            <path d="M7 14h10v6H7z" />
-          </svg>
-        </button>
+        <div class="toolbox-wrap">
+          <button
+            class="icon-button toolbox-trigger"
+            type="button"
+            data-action="toggle-toolbox"
+            aria-label="打开链接工具箱"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+            aria-controls="toolbox-panel"
+            data-i18n-aria="openToolbox"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="m14 5 5 5" />
+              <path d="m5 19 8.5-8.5" />
+              <path d="m4 15 5 5" />
+              <path d="m15 4 5 5" />
+              <path d="M9 15h.01" />
+            </svg>
+          </button>
+
+          <div class="toolbox-popover" id="toolbox-panel" role="dialog" aria-label="ToolBox" hidden>
+            <div class="toolbox-title">
+              <span>TOOLBOX</span>
+              <span></span>
+            </div>
+            <div class="toolbox-links">
+              <a href="https://x.com/ZhangJi318969" target="_blank" rel="noopener noreferrer">X</a>
+              <a href="https://www.pixiv.net/users/22664646" target="_blank" rel="noopener noreferrer">pixiv</a>
+              <a href="https://space.bilibili.com/106349289?spm_id_from=333.1007.0.0" target="_blank" rel="noopener noreferrer">bilibili</a>
+              <a href="https://www.xiaohongshu.com/user/profile/64e42409000000000100f0cf" target="_blank" rel="noopener noreferrer">小红书</a>
+            </div>
+          </div>
+        </div>
         <button class="icon-button" type="button" data-action="theme" aria-label="切换深浅色" data-i18n-aria="toggleTheme">
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z" />
@@ -66,6 +92,7 @@
     <main id="top">
       <section class="intro-switch" aria-label="首页与重点项目">
         <div class="intro-switch-sticky">
+          <div class="scene-track">
           <section class="home-stage" aria-label="首页概览">
         <section class="profile-section" aria-labelledby="profile-title">
           <div class="profile-copy">
@@ -170,10 +197,8 @@
           </article>
         </div>
           </section>
-        </div>
-      </section>
 
-      <section class="content-section" id="experience">
+          <section class="content-section" id="experience">
         <div class="section-heading stacked-heading title-first-heading">
           <h2 data-i18n="projectExperienceTitle">项目经历</h2>
           <p class="eyebrow" data-i18n="projectExperienceEyebrow">Projects</p>
@@ -227,6 +252,9 @@
               <p class="project-role" data-i18n="expCmccAnnualRole">音响调度</p>
             </div>
           </article>
+        </div>
+          </section>
+          </div>
         </div>
       </section>
 
@@ -689,6 +717,6 @@
 
     <div class="toast" role="status" aria-live="polite" hidden></div>
 
-    <script src="script.js?v=20260628-scene"></script>
+    <script src="script.js?v=20260628-pages"></script>
   </body>
 </html>
