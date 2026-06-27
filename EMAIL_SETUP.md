@@ -1,6 +1,6 @@
 # 个人域名邮箱配置清单
 
-目标：用个人域名做一个正式邮箱，例如 `hello@yourdomain.com`，并尽量继续在 Gmail 里收发。
+目标：用个人域名做一个正式邮箱，例如 `contact@yinyq.net`，并尽量继续在 Gmail 里收发。
 
 ## 推荐决策
 
@@ -27,7 +27,7 @@
 
 适合：你想保留现有个人 Gmail 收件箱，并尽量降低成本。
 
-- 收件：Cloudflare 把 `hello@yourdomain.com` 转发到你的个人 Gmail。
+- 收件：Cloudflare 把 `contact@yinyq.net` 转发到你的个人 Gmail。
 - 发件：在 Gmail 里添加“Send mail as”，通常需要一个支持 SMTP 的第三方服务。
 - 成本：收件转发可低成本；稳定发件通常需要 SMTP 服务。
 - 限制：Cloudflare Email Routing 主要负责收件转发，不等同于完整邮箱主机。
@@ -36,7 +36,7 @@
 
 1. 把域名 DNS 托管到 Cloudflare。
 2. 在 Cloudflare Email Routing 添加 Gmail 作为 Destination Address，并在 Gmail 中点验证。
-3. 创建路由规则，例如 `hello@yourdomain.com -> yourname@gmail.com`。
+3. 创建路由规则，例如 `contact@yinyq.net -> yourname@gmail.com`。
 4. 测试收件，注意要从另一个邮箱发测试邮件。
 5. 为发件选择 SMTP 服务。
 6. 在 Gmail 设置里添加“Send mail as”，填入姓名、域名邮箱、SMTP 信息并验证。

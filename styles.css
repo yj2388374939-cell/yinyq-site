@@ -325,21 +325,6 @@ h3 {
   justify-content: center;
 }
 
-.owner-trigger {
-  width: auto;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-}
-
-.owner-trigger:hover .portrait-frame,
-.owner-trigger:focus-visible .portrait-frame {
-  border-color: var(--accent);
-  transform: translateY(-1px);
-}
-
 .portrait-frame {
   width: min(100%, 300px);
   aspect-ratio: 1 / 1.14;
@@ -572,28 +557,12 @@ h3 {
   overflow: hidden;
 }
 
-.owner-added-card {
-  color: inherit;
-}
-
 .project-card img {
   display: block;
   width: 100%;
   aspect-ratio: 16 / 10;
   border-bottom: 1px solid var(--line);
   object-fit: cover;
-}
-
-.project-card-placeholder {
-  display: grid;
-  min-height: 190px;
-  place-items: center;
-  border-bottom: 1px solid var(--line);
-  background:
-    linear-gradient(135deg, var(--accent-soft), transparent 62%),
-    color-mix(in srgb, var(--surface-strong) 70%, transparent);
-  color: var(--accent-strong);
-  font-weight: 900;
 }
 
 .project-card > div {
@@ -784,158 +753,6 @@ h3 {
   height: auto;
 }
 
-.owner-main {
-  padding: clamp(44px, 8vw, 86px) 0;
-}
-
-.owner-main h1 {
-  max-width: none;
-  font-size: clamp(2.4rem, 6vw, 4.6rem);
-}
-
-.owner-login,
-.owner-dashboard {
-  max-width: 1120px;
-  margin: 0 auto;
-}
-
-.owner-login-form {
-  max-width: 480px;
-}
-
-.owner-form {
-  display: grid;
-  gap: 14px;
-}
-
-.owner-form label {
-  display: grid;
-  gap: 6px;
-  color: var(--muted);
-  font-weight: 800;
-}
-
-.owner-form input,
-.owner-form textarea,
-.owner-export {
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-}
-
-.owner-form input,
-.owner-form textarea {
-  padding: 11px 12px;
-}
-
-.owner-form textarea {
-  resize: vertical;
-}
-
-.owner-message {
-  min-height: 24px;
-  margin: 0;
-  color: var(--warm);
-  font-weight: 800;
-}
-
-.owner-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 24px;
-}
-
-.secondary-button {
-  display: inline-flex;
-  min-height: 40px;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.secondary-button:hover,
-.secondary-button:focus-visible {
-  border-color: var(--accent);
-  color: var(--accent-strong);
-}
-
-.owner-panels {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.owner-panel {
-  display: grid;
-  gap: 18px;
-  align-content: start;
-  padding: 20px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  box-shadow: 0 10px 28px rgba(20, 31, 31, 0.06);
-}
-
-.owner-panel h2 {
-  font-size: 1.45rem;
-}
-
-.owner-list {
-  display: grid;
-  gap: 10px;
-}
-
-.owner-list-empty {
-  margin: 0;
-  color: var(--muted);
-  font-weight: 800;
-}
-
-.owner-list-item {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px;
-  align-items: center;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-}
-
-.owner-list-item p {
-  margin: 4px 0 0;
-  color: var(--muted);
-  font-size: 0.92rem;
-}
-
-.owner-list-item button {
-  min-height: 34px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--warm);
-  font: inherit;
-  font-weight: 900;
-  cursor: pointer;
-}
-
-.owner-export {
-  min-height: 220px;
-  margin-top: 20px;
-  padding: 14px;
-}
-
 .split-section {
   display: grid;
   grid-template-columns: 0.36fr 1fr;
@@ -1064,10 +881,6 @@ h3 {
     grid-template-columns: 1fr;
   }
 
-  .owner-panels {
-    grid-template-columns: 1fr;
-  }
-
   .illustration-masonry {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1119,10 +932,6 @@ h3 {
 
   .music-meta {
     justify-self: start;
-  }
-
-  .owner-list-item {
-    grid-template-columns: 1fr;
   }
 
   .illustration-masonry {

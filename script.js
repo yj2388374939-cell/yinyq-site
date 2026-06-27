@@ -1,6 +1,5 @@
 const root = document.documentElement;
 const toast = document.querySelector(".toast");
-const OWNER_STORAGE_KEY = "yinyunqing-owner-content";
 const i18n = {
   zh: {
     htmlLang: "zh-CN",
@@ -318,8 +317,6 @@ const i18n = {
 
 const storedTheme = localStorage.getItem("resume-theme");
 let currentLanguage = "zh";
-let ownerClickCount = 0;
-let ownerClickTimer;
 let illustrationLayoutFrame = 0;
 let localTimeTimer;
 
@@ -373,7 +370,7 @@ function showToast(message) {
 
 async function copyEmail() {
   const emailNode = document.querySelector("[data-email]");
-  const email = emailNode?.dataset.email || "hello@yourdomain.com";
+  const email = emailNode?.dataset.email || "contact@yinyq.net";
 
   try {
     await navigator.clipboard.writeText(email);
@@ -387,116 +384,6 @@ function toggleTheme() {
   const nextTheme = root.dataset.theme === "dark" ? "light" : "dark";
   root.dataset.theme = nextTheme;
   localStorage.setItem("resume-theme", nextTheme);
-}
-
-function loadOwnerContent() {
-  try {
-    return {
-      experience: [],
-      featured: [],
-      music: [],
-      illustration: [],
-      ...JSON.parse(localStorage.getItem(OWNER_STORAGE_KEY)),
-    };
-  } catch {
-    return {
-      experience: [],
-      featured: [],
-      music: [],
-      illustration: [],
-    };
-  }
-}
-
-function escapeHtml(value) {
-  return String(value || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function renderOwnerContent() {
-  const content = loadOwnerContent();
-  document.querySelectorAll("[data-owner-added]").forEach((node) => node.remove());
-
-  const timeline = document.querySelector("#experience .timeline");
-  [...content.experience].reverse().forEach((item) => {
-    timeline?.insertAdjacentHTML(
-      "afterbegin",
-      `
-        <article class="timeline-item" data-owner-added>
-          <div class="timeline-date">${escapeHtml(item.date)}</div>
-          <div class="timeline-body">
-            <h3>${escapeHtml(item.title)}</h3>
-            <p class="project-role">${escapeHtml(item.role)}</p>
-          </div>
-        </article>
-      `,
-    );
-  });
-
-  const projectGrid = document.querySelector("#projects .project-grid");
-  [...content.featured].reverse().forEach((item) => {
-    const tagName = item.url ? "a" : "article";
-    const href = item.url ? ` href="${escapeHtml(item.url)}"` : "";
-    const image = item.image
-      ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" />`
-      : `<div class="project-card-placeholder">${escapeHtml(item.tag || "Project")}</div>`;
-    projectGrid?.insertAdjacentHTML(
-      "afterbegin",
-      `
-        <${tagName} class="project-card owner-added-card"${href} data-owner-added>
-          ${image}
-          <div>
-            <p class="project-tag">${escapeHtml(item.tag)}</p>
-            <h3>${escapeHtml(item.title)}</h3>
-            <p>${escapeHtml(item.description)}</p>
-          </div>
-        </${tagName}>
-      `,
-    );
-  });
-
-  const musicList = document.querySelector(".music-list");
-  [...content.music].reverse().forEach((item) => {
-    musicList?.insertAdjacentHTML(
-      "afterbegin",
-      `
-        <a class="music-item" href="${escapeHtml(item.url)}" target="_blank" rel="noreferrer" data-owner-added>
-          <span class="music-index">01</span>
-          <div>
-            <h4>${escapeHtml(item.title)}</h4>
-            <p>${escapeHtml(item.meta)}</p>
-          </div>
-          <span class="music-meta">${escapeHtml(i18n[currentLanguage].musicOpenLabel)}</span>
-        </a>
-      `,
-    );
-  });
-
-  const illustrationMasonry = document.querySelector(".illustration-masonry");
-  [...content.illustration].reverse().forEach((item) => {
-    illustrationMasonry?.insertAdjacentHTML(
-      "afterbegin",
-      `
-        <a class="illustration-card" href="${escapeHtml(item.url)}" data-owner-added>
-          <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" />
-          <div>
-            <h4>${escapeHtml(item.title)}</h4>
-            <p>${escapeHtml(item.quote)}</p>
-          </div>
-        </a>
-      `,
-    );
-  });
-
-  document.querySelectorAll(".music-list .music-index").forEach((node, index) => {
-    node.textContent = String(index + 1).padStart(2, "0");
-  });
-
-  queueIllustrationLayout();
 }
 
 function layoutIllustrationMasonry() {
@@ -579,28 +466,10 @@ function setupLocalTime() {
   localTimeTimer = window.setInterval(updateLocalTime, 1000);
 }
 
-function handleOwnerTrigger() {
-  ownerClickCount += 1;
-  window.clearTimeout(ownerClickTimer);
-  ownerClickTimer = window.setTimeout(() => {
-    ownerClickCount = 0;
-  }, 1200);
-
-  if (ownerClickCount >= 3) {
-    window.location.href = "owner.html";
-  }
-}
-
 document.addEventListener("click", (event) => {
-  if (event.target.closest(".owner-trigger")) {
-    handleOwnerTrigger();
-    return;
-  }
-
   const languageButton = event.target.closest("[data-lang]");
   if (languageButton) {
     applyLanguage(languageButton.dataset.lang);
-    renderOwnerContent();
     queueIllustrationLayout();
     return;
   }
@@ -624,6 +493,5 @@ document.addEventListener("click", (event) => {
 });
 
 applyLanguage(localStorage.getItem("resume-language") || "zh");
-renderOwnerContent();
 setupIllustrationMasonry();
 setupLocalTime();
