@@ -314,6 +314,7 @@ const storedTheme = localStorage.getItem("resume-theme");
 let currentLanguage = "zh";
 let ownerClickCount = 0;
 let ownerClickTimer;
+let illustrationLayoutFrame = 0;
 
 if (storedTheme) {
   root.dataset.theme = storedTheme;
@@ -486,6 +487,49 @@ function renderOwnerContent() {
   document.querySelectorAll(".music-list .music-index").forEach((node, index) => {
     node.textContent = String(index + 1).padStart(2, "0");
   });
+
+  queueIllustrationLayout();
+}
+
+function layoutIllustrationMasonry() {
+  const grid = document.querySelector(".illustration-masonry");
+  if (!grid) return;
+
+  const cards = [...grid.querySelectorAll(".illustration-card")];
+  const styles = window.getComputedStyle(grid);
+  const rowHeight = Number.parseFloat(styles.gridAutoRows);
+  const rowGap = Number.parseFloat(styles.rowGap);
+
+  if (!rowHeight) return;
+
+  cards.forEach((card) => {
+    card.style.gridRowEnd = "";
+  });
+
+  cards.forEach((card) => {
+    const cardHeight = card.getBoundingClientRect().height;
+    const span = Math.max(1, Math.ceil((cardHeight + rowGap) / (rowHeight + rowGap)));
+    card.style.gridRowEnd = `span ${span}`;
+  });
+}
+
+function queueIllustrationLayout() {
+  window.cancelAnimationFrame(illustrationLayoutFrame);
+  illustrationLayoutFrame = window.requestAnimationFrame(layoutIllustrationMasonry);
+}
+
+function setupIllustrationMasonry() {
+  const grid = document.querySelector(".illustration-masonry");
+  if (!grid) return;
+
+  grid.querySelectorAll("img").forEach((image) => {
+    if (!image.complete) {
+      image.addEventListener("load", queueIllustrationLayout, { once: true });
+    }
+  });
+
+  window.addEventListener("resize", queueIllustrationLayout);
+  queueIllustrationLayout();
 }
 
 function handleOwnerTrigger() {
@@ -510,6 +554,7 @@ document.addEventListener("click", (event) => {
   if (languageButton) {
     applyLanguage(languageButton.dataset.lang);
     renderOwnerContent();
+    queueIllustrationLayout();
     return;
   }
 
@@ -533,3 +578,4 @@ document.addEventListener("click", (event) => {
 
 applyLanguage(localStorage.getItem("resume-language") || "zh");
 renderOwnerContent();
+setupIllustrationMasonry();

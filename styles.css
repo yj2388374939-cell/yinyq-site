@@ -648,16 +648,18 @@ h3 {
 }
 
 .illustration-masonry {
-  column-count: 3;
-  column-gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: 8px;
+  gap: 16px;
+  align-items: start;
 }
 
 .illustration-card {
-  display: inline-block;
+  display: block;
   width: 100%;
-  margin: 0 0 16px;
+  margin: 0;
   overflow: hidden;
-  break-inside: avoid;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: color-mix(in srgb, var(--surface) 94%, transparent);
@@ -1011,7 +1013,7 @@ h3 {
   }
 
   .illustration-masonry {
-    column-count: 2;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .project-card {
@@ -1064,7 +1066,7 @@ h3 {
   }
 
   .illustration-masonry {
-    column-count: 1;
+    grid-template-columns: 1fr;
   }
 }
 
