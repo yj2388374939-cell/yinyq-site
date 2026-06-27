@@ -333,7 +333,7 @@ a {
 
 .audio-button {
   overflow: hidden;
-  color: #17bed8;
+  color: var(--text);
   transition:
     border-color 180ms ease,
     background 180ms ease,
@@ -387,13 +387,11 @@ a {
   z-index: 30;
   width: 224px;
   padding: 18px;
-  border: 1px solid color-mix(in srgb, var(--accent) 38%, #050807);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
-  background:
-    linear-gradient(145deg, rgba(11, 88, 83, 0.98), rgba(31, 58, 54, 0.98)),
-    linear-gradient(315deg, color-mix(in srgb, var(--warm) 18%, transparent), transparent 54%);
-  box-shadow: 0 22px 44px rgba(20, 31, 31, 0.24);
-  color: #fff;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow: 0 12px 28px rgba(20, 31, 31, 0.12);
+  color: var(--text);
   opacity: 0;
   pointer-events: none;
   transform: translate3d(0, -14px, 0) scale(0.96);
@@ -426,7 +424,7 @@ a {
 
 .toolbox-title span:last-child {
   height: 1px;
-  background: color-mix(in srgb, #fff 84%, transparent);
+  background: color-mix(in srgb, var(--accent-strong) 55%, var(--line));
 }
 
 .toolbox-links {
@@ -457,7 +455,7 @@ a {
 .toolbox-links a:hover,
 .toolbox-links a:focus-visible {
   background: color-mix(in srgb, #050807 82%, var(--accent));
-  outline: 2px solid rgba(255, 255, 255, 0.62);
+  outline: 2px solid color-mix(in srgb, var(--accent-strong) 42%, transparent);
   outline-offset: 2px;
 }
 

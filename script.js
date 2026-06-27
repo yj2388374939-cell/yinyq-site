@@ -8,14 +8,8 @@ const sceneStageHashes = new Map([
   ["#experience", 2],
 ]);
 const scenePanelCount = 3;
-const sceneWheelThreshold = 30;
-const sceneWheelQuietMs = 150;
-const sceneWheelLockMs = 760;
-let sceneWheelDelta = 0;
-let sceneWheelLastAt = 0;
-let sceneWheelLockedUntil = 0;
-let sceneWheelResetTimer;
-let sceneWheelUnlockTimer;
+const sceneWheelGestureMs = 680;
+let sceneWheelHandledUntil = 0;
 const hasTranslation = (dictionary, key) => Object.prototype.hasOwnProperty.call(dictionary, key);
 const i18n = {
   zh: {
@@ -586,16 +580,6 @@ function setupHomeMotion() {
 
   const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
   const easeOutCubic = (value) => 1 - Math.pow(1 - value, 3);
-  const resetWheelDelta = () => {
-    sceneWheelDelta = 0;
-  };
-  const scheduleWheelUnlock = (duration) => {
-    sceneWheelLockedUntil = Math.max(sceneWheelLockedUntil, performance.now() + duration);
-    window.clearTimeout(sceneWheelUnlockTimer);
-    sceneWheelUnlockTimer = window.setTimeout(() => {
-      sceneWheelLockedUntil = 0;
-    }, Math.max(0, sceneWheelLockedUntil - performance.now()));
-  };
   const getDominantWheelDelta = (event) => {
     const rawDelta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
     const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
@@ -627,34 +611,18 @@ function setupHomeMotion() {
     event.preventDefault();
 
     const now = performance.now();
-    const isWheelQuiet = now - sceneWheelLastAt > sceneWheelQuietMs;
-    sceneWheelLastAt = now;
-
-    if (now < sceneWheelLockedUntil || !isWheelQuiet) {
-      scheduleWheelUnlock(180);
+    if (now < sceneWheelHandledUntil) {
       return;
     }
 
-    window.clearTimeout(sceneWheelResetTimer);
-    sceneWheelResetTimer = window.setTimeout(resetWheelDelta, 180);
-    sceneWheelDelta = Math.sign(sceneWheelDelta) === direction ? sceneWheelDelta + delta : delta;
-
-    if (Math.abs(sceneWheelDelta) < sceneWheelThreshold) return;
-
-    const currentIndex =
-      direction > 0
-        ? snapPoints.findLastIndex((point) => currentY >= point - boundaryPad)
-        : snapPoints.findIndex((point) => currentY <= point + boundaryPad);
-    const fallbackIndex = snapPoints.reduce((nearestIndex, point, index) => {
+    sceneWheelHandledUntil = now + sceneWheelGestureMs;
+    const currentIndex = snapPoints.reduce((nearestIndex, point, index) => {
       const nearestDistance = Math.abs(currentY - snapPoints[nearestIndex]);
       const distance = Math.abs(currentY - point);
       return distance < nearestDistance ? index : nearestIndex;
     }, 0);
-    const baseIndex = currentIndex === -1 ? fallbackIndex : currentIndex;
-    const nextIndex = clamp(baseIndex + direction, 0, snapPoints.length - 1);
+    const nextIndex = clamp(currentIndex + direction, 0, snapPoints.length - 1);
 
-    resetWheelDelta();
-    scheduleWheelUnlock(sceneWheelLockMs);
     scrollToScenePoint(snapPoints[nextIndex]);
   };
 
