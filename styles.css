@@ -822,10 +822,23 @@ h3 {
   box-shadow: var(--shadow);
 }
 
+.contact-section h2 {
+  font-size: clamp(1.45rem, 2.5vw, 2rem);
+  line-height: 1.18;
+}
+
 .contact-section p:not(.eyebrow) {
   max-width: 640px;
-  margin: 14px 0 0;
-  color: var(--muted);
+  margin: 12px 0 0;
+  color: var(--text);
+  font-size: 1.06rem;
+  font-weight: 650;
+  line-height: 1.7;
+}
+
+.contact-section strong {
+  color: var(--accent-strong);
+  font-weight: 900;
 }
 
 .primary-link {
