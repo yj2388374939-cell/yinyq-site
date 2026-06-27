@@ -797,6 +797,10 @@ h3 {
   border-top: 0;
 }
 
+.intro-switch .portfolio-page #skills {
+  padding-bottom: clamp(60px, 8vw, 96px);
+}
+
 .section-heading {
   display: grid;
   grid-template-columns: minmax(160px, 0.36fr) 1fr;
