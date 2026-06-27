@@ -6,8 +6,11 @@ const audioButton = document.querySelector('[data-action="audio-placeholder"]');
 const sceneStageHashes = new Map([
   ["#projects", 1],
   ["#experience", 2],
+  ["#works", 3],
+  ["#skills", 3],
+  ["#contact", 3],
 ]);
-const scenePanelCount = 3;
+const scenePanelCount = 4;
 const sceneWheelGestureMs = 680;
 let sceneWheelHandledUntil = 0;
 const hasTranslation = (dictionary, key) => Object.prototype.hasOwnProperty.call(dictionary, key);
@@ -520,19 +523,9 @@ function getSceneSnapPoints() {
   const introSwitch = document.querySelector(".intro-switch");
   if (!introSwitch) return [];
 
-  const points = Array.from({ length: scenePanelCount }, (_, index) => getSceneStageScrollTop(index)).filter(
-    (point) => point !== null,
-  );
-  const worksSection = document.querySelector("#works");
-  const exitTop = worksSection
-    ? worksSection.offsetTop - 72
-    : introSwitch.offsetTop + introSwitch.offsetHeight - 72;
-
-  if (Number.isFinite(exitTop)) {
-    points.push(exitTop);
-  }
-
-  return points.map((point) => Math.max(0, Math.round(point)));
+  return Array.from({ length: scenePanelCount }, (_, index) => getSceneStageScrollTop(index))
+    .filter((point) => point !== null)
+    .map((point) => Math.max(0, Math.round(point)));
 }
 
 function scrollToSceneStage(stageIndex, behavior = "smooth") {
@@ -553,11 +546,25 @@ function scrollToScenePoint(top, behavior = "smooth") {
   });
 }
 
+function scrollPortfolioTarget(hash, behavior = "smooth") {
+  const portfolioPage = document.querySelector(".portfolio-page");
+  const target = hash ? document.querySelector(hash) : null;
+
+  if (!portfolioPage || !target || !portfolioPage.contains(target)) return;
+
+  const top = Math.max(0, target.offsetTop - portfolioPage.offsetTop);
+  portfolioPage.scrollTo({
+    top,
+    behavior: motionQuery.matches ? "auto" : behavior,
+  });
+}
+
 function setupHomeMotion() {
   const introSwitch = document.querySelector(".intro-switch");
   const sceneTrack = document.querySelector(".scene-track");
   const projectsSection = document.querySelector("#projects");
   const experienceSection = document.querySelector("#experience");
+  const portfolioPage = document.querySelector(".portfolio-page");
   const wideQuery = window.matchMedia("(min-width: 861px)");
 
   const resetStage = () => {
@@ -568,12 +575,15 @@ function setupHomeMotion() {
     root.style.setProperty("--project-blur", wideQuery.matches ? "3px" : "0px");
     root.style.setProperty("--experience-opacity", wideQuery.matches ? "0.1" : "1");
     root.style.setProperty("--experience-blur", wideQuery.matches ? "3px" : "0px");
+    root.style.setProperty("--portfolio-opacity", wideQuery.matches ? "0.1" : "1");
+    root.style.setProperty("--portfolio-blur", wideQuery.matches ? "3px" : "0px");
   };
 
   if (motionQuery.matches || !introSwitch || !sceneTrack) {
     root.classList.add("is-ready");
     projectsSection?.classList.add("is-visible");
     experienceSection?.classList.add("is-visible");
+    portfolioPage?.classList.add("is-visible");
     resetStage();
     return;
   }
@@ -608,6 +618,23 @@ function setupHomeMotion() {
 
     if (!inSnapRange) return;
 
+    const currentIndex = snapPoints.reduce((nearestIndex, point, index) => {
+      const nearestDistance = Math.abs(currentY - snapPoints[nearestIndex]);
+      const distance = Math.abs(currentY - point);
+      return distance < nearestDistance ? index : nearestIndex;
+    }, 0);
+    const isPortfolioStage = currentIndex === scenePanelCount - 1;
+    const portfolioWheelTarget = event.target.closest?.(".portfolio-page");
+
+    if (isPortfolioStage && portfolioPage && portfolioWheelTarget) {
+      const canScrollDown = portfolioPage.scrollTop + portfolioPage.clientHeight < portfolioPage.scrollHeight - 2;
+      const canScrollUp = portfolioPage.scrollTop > 2;
+
+      if ((direction > 0 && canScrollDown) || (direction < 0 && canScrollUp)) {
+        return;
+      }
+    }
+
     event.preventDefault();
 
     const now = performance.now();
@@ -616,11 +643,6 @@ function setupHomeMotion() {
     }
 
     sceneWheelHandledUntil = now + sceneWheelGestureMs;
-    const currentIndex = snapPoints.reduce((nearestIndex, point, index) => {
-      const nearestDistance = Math.abs(currentY - snapPoints[nearestIndex]);
-      const distance = Math.abs(currentY - point);
-      return distance < nearestDistance ? index : nearestIndex;
-    }, 0);
     const nextIndex = clamp(currentIndex + direction, 0, snapPoints.length - 1);
 
     scrollToScenePoint(snapPoints[nextIndex]);
@@ -630,8 +652,10 @@ function setupHomeMotion() {
     if (!wideQuery.matches) {
       root.classList.remove("home-exiting");
       root.classList.remove("projects-exiting");
+      root.classList.remove("experience-exiting");
       projectsSection?.classList.add("is-visible");
       experienceSection?.classList.add("is-visible");
+      portfolioPage?.classList.add("is-visible");
       resetStage();
       return;
     }
@@ -643,25 +667,40 @@ function setupHomeMotion() {
     const pageProgress = progress * (scenePanelCount - 1);
     const firstTransition = clamp(pageProgress, 0, 1);
     const secondTransition = clamp(pageProgress - 1, 0, 1);
+    const thirdTransition = clamp(pageProgress - 2, 0, 1);
     const firstEase = easeOutCubic(firstTransition);
     const secondEase = easeOutCubic(secondTransition);
-    const scenePosition = firstEase + secondEase;
+    const thirdEase = easeOutCubic(thirdTransition);
+    const scenePosition = firstEase + secondEase + thirdEase;
 
     const projectOpacity =
       pageProgress <= 1 ? Math.min(1, 0.1 + firstTransition * 1.2) : Math.max(0, 1 - secondTransition * 1.15);
     const projectBlur = pageProgress <= 1 ? 3 * (1 - firstEase) : 2 * secondEase;
+    const experienceOpacity =
+      pageProgress <= 1
+        ? 0.1
+        : pageProgress <= 2
+          ? Math.min(1, 0.1 + secondTransition * 1.2)
+          : Math.max(0, 1 - thirdTransition * 1.15);
+    const experienceBlur = pageProgress <= 1 ? 3 : pageProgress <= 2 ? 3 * (1 - secondEase) : 2 * thirdEase;
+    const portfolioOpacity = Math.min(1, 0.1 + thirdTransition * 1.2);
+    const portfolioBlur = 3 * (1 - thirdEase);
 
     root.style.setProperty("--scene-x", `${(-100 * scenePosition).toFixed(2)}vw`);
     root.style.setProperty("--home-opacity", Math.max(0, 1 - firstTransition * 1.15).toFixed(3));
     root.style.setProperty("--home-blur", `${(2 * firstEase).toFixed(2)}px`);
     root.style.setProperty("--project-opacity", projectOpacity.toFixed(3));
     root.style.setProperty("--project-blur", `${projectBlur.toFixed(2)}px`);
-    root.style.setProperty("--experience-opacity", Math.min(1, 0.1 + secondTransition * 1.2).toFixed(3));
-    root.style.setProperty("--experience-blur", `${(3 * (1 - secondEase)).toFixed(2)}px`);
+    root.style.setProperty("--experience-opacity", experienceOpacity.toFixed(3));
+    root.style.setProperty("--experience-blur", `${experienceBlur.toFixed(2)}px`);
+    root.style.setProperty("--portfolio-opacity", portfolioOpacity.toFixed(3));
+    root.style.setProperty("--portfolio-blur", `${portfolioBlur.toFixed(2)}px`);
     root.classList.toggle("home-exiting", firstTransition > 0.02);
     root.classList.toggle("projects-exiting", secondTransition > 0.02);
+    root.classList.toggle("experience-exiting", thirdTransition > 0.02);
     projectsSection?.classList.toggle("is-visible", firstTransition > 0.02 && secondTransition < 0.98);
-    experienceSection?.classList.toggle("is-visible", secondTransition > 0.02);
+    experienceSection?.classList.toggle("is-visible", secondTransition > 0.02 && thirdTransition < 0.98);
+    portfolioPage?.classList.toggle("is-visible", thirdTransition > 0.02);
 
     if (firstTransition > 0.02) {
       root.classList.add("projects-entered");
@@ -669,6 +708,10 @@ function setupHomeMotion() {
 
     if (secondTransition > 0.02) {
       root.classList.add("experience-entered");
+    }
+
+    if (thirdTransition > 0.02) {
+      root.classList.add("portfolio-entered");
     }
   };
 
@@ -686,6 +729,9 @@ function setupHomeMotion() {
       const initialStage = sceneStageHashes.get(window.location.hash);
       if (initialStage) {
         scrollToSceneStage(initialStage, "auto");
+        if (initialStage === scenePanelCount - 1) {
+          scrollPortfolioTarget(window.location.hash, "auto");
+        }
       }
     });
   }, 160);
@@ -778,6 +824,9 @@ document.addEventListener("click", (event) => {
     event.preventDefault();
     window.history.pushState(null, "", anchor.getAttribute("href"));
     scrollToSceneStage(stageIndex);
+    if (stageIndex === scenePanelCount - 1) {
+      window.setTimeout(() => scrollPortfolioTarget(anchor.getAttribute("href")), 420);
+    }
     return;
   }
 
