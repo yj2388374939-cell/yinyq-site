@@ -22,6 +22,8 @@ const i18n = {
     newMedia: "New Media & Game Design @ KR DCU",
     soundDesign: "Sound Design @ Senzoku Gakuen",
     portraitCaption: "个人标识 / YINYUNQING",
+    localTimeTitle: "我所在的时间",
+    localTimeZone: "北京时间 / UTC+8",
     metricProjectsValue: "6",
     metricProjectsLabel: "个项目",
     metricLanguagesValue: "CN / JP / EN",
@@ -124,6 +126,8 @@ const i18n = {
     newMedia: "New Media & Game Design @ KR DCU",
     soundDesign: "Sound Design @ Senzoku Gakuen",
     portraitCaption: "Personal Mark / YINYUNQING",
+    localTimeTitle: "My Time",
+    localTimeZone: "Beijing Time / UTC+8",
     metricProjectsValue: "6",
     metricProjectsLabel: "Projects",
     metricLanguagesValue: "CN / JP / EN",
@@ -226,6 +230,8 @@ const i18n = {
     newMedia: "New Media & Game Design @ KR DCU",
     soundDesign: "Sound Design @ Senzoku Gakuen",
     portraitCaption: "個人標識 / YINYUNQING",
+    localTimeTitle: "私の時間",
+    localTimeZone: "北京時間 / UTC+8",
     metricProjectsValue: "6",
     metricProjectsLabel: "プロジェクト",
     metricLanguagesValue: "CN / JP / EN",
@@ -315,6 +321,7 @@ let currentLanguage = "zh";
 let ownerClickCount = 0;
 let ownerClickTimer;
 let illustrationLayoutFrame = 0;
+let localTimeTimer;
 
 if (storedTheme) {
   root.dataset.theme = storedTheme;
@@ -352,6 +359,7 @@ function applyLanguage(language) {
   });
 
   localStorage.setItem("resume-language", currentLanguage);
+  updateLocalTime();
 }
 
 function showToast(message) {
@@ -532,6 +540,45 @@ function setupIllustrationMasonry() {
   queueIllustrationLayout();
 }
 
+function updateLocalTime() {
+  const timeNode = document.querySelector("[data-beijing-time]");
+  const dateNode = document.querySelector("[data-beijing-date]");
+  if (!timeNode || !dateNode) return;
+
+  const now = new Date();
+  const localeMap = {
+    zh: "zh-CN",
+    en: "en-US",
+    ja: "ja-JP",
+  };
+  const locale = localeMap[currentLanguage] || "zh-CN";
+  const timeFormatter = new Intl.DateTimeFormat(locale, {
+    timeZone: "Asia/Shanghai",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    hourCycle: "h23",
+  });
+  const dateFormatter = new Intl.DateTimeFormat(locale, {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  });
+
+  timeNode.textContent = timeFormatter.format(now);
+  timeNode.setAttribute("datetime", now.toISOString());
+  dateNode.textContent = dateFormatter.format(now);
+}
+
+function setupLocalTime() {
+  updateLocalTime();
+  window.clearInterval(localTimeTimer);
+  localTimeTimer = window.setInterval(updateLocalTime, 1000);
+}
+
 function handleOwnerTrigger() {
   ownerClickCount += 1;
   window.clearTimeout(ownerClickTimer);
@@ -579,3 +626,4 @@ document.addEventListener("click", (event) => {
 applyLanguage(localStorage.getItem("resume-language") || "zh");
 renderOwnerContent();
 setupIllustrationMasonry();
+setupLocalTime();

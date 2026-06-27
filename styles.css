@@ -314,6 +314,12 @@ h3 {
   color: var(--accent-strong);
 }
 
+.profile-side {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+}
+
 .profile-visual {
   display: flex;
   justify-content: center;
@@ -385,6 +391,52 @@ h3 {
   width: min(190px, 72%);
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.local-time-card {
+  display: grid;
+  width: min(100%, 300px);
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow: 0 12px 28px rgba(20, 31, 31, 0.07);
+}
+
+.local-time-header {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.local-time-label {
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+
+.local-time-zone {
+  color: var(--accent-strong);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.local-time-value {
+  color: var(--text);
+  font-size: clamp(1.7rem, 4vw, 2.18rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.local-time-date {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
 }
 
 .section-grid {
@@ -993,6 +1045,10 @@ h3 {
     min-height: auto;
   }
 
+  .profile-side {
+    justify-items: start;
+  }
+
   .profile-visual {
     justify-content: flex-start;
   }
@@ -1049,6 +1105,10 @@ h3 {
   }
 
   .portrait-frame {
+    width: 100%;
+  }
+
+  .local-time-card {
     width: 100%;
   }
 

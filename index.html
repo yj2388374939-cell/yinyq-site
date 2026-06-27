@@ -76,15 +76,26 @@
           </div>
         </div>
 
-        <button class="profile-visual owner-trigger" type="button" aria-label="个人标识">
-          <div class="portrait-frame">
-            <div class="portrait-card">
-              <img class="portrait-image" src="assets/yinyunqing.jpg" alt="殷雲清个人标识" />
-              <span class="portrait-line"></span>
-              <span class="portrait-caption" data-i18n="portraitCaption">个人标识 / YINYUNQING</span>
+        <div class="profile-side">
+          <button class="profile-visual owner-trigger" type="button" aria-label="个人标识">
+            <div class="portrait-frame">
+              <div class="portrait-card">
+                <img class="portrait-image" src="assets/yinyunqing.jpg" alt="殷雲清个人标识" />
+                <span class="portrait-line"></span>
+                <span class="portrait-caption" data-i18n="portraitCaption">个人标识 / YINYUNQING</span>
+              </div>
             </div>
-          </div>
-        </button>
+          </button>
+
+          <aside class="local-time-card" aria-live="polite">
+            <div class="local-time-header">
+              <span class="local-time-label" data-i18n="localTimeTitle">我所在的时间</span>
+              <span class="local-time-zone" data-i18n="localTimeZone">北京时间 / UTC+8</span>
+            </div>
+            <time class="local-time-value" data-beijing-time datetime=""></time>
+            <span class="local-time-date" data-beijing-date></span>
+          </aside>
+        </div>
       </section>
 
       <section class="section-grid" aria-label="简历概览">
