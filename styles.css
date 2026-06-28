@@ -461,11 +461,7 @@ a {
 }
 
 .bgm-guide.is-dismissing p {
-  opacity: 0;
-  transform: translate3d(8px, 8px, 0) scale(0.96);
-  transition:
-    opacity 180ms ease,
-    transform 180ms ease;
+  animation: bgmGuideBubbleDismiss 360ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .toolbox-popover {
@@ -568,6 +564,18 @@ a {
   100% {
     opacity: 0;
     transform: translate3d(18px, -18px, 0) scale(0.64) rotate(5deg);
+  }
+}
+
+@keyframes bgmGuideBubbleDismiss {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(10px, -8px, 0) scale(0.94);
   }
 }
 
