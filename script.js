@@ -5,6 +5,7 @@ const toolboxPanel = document.querySelector("#toolbox-panel");
 const audioButton = document.querySelector('[data-action="toggle-bgm"]');
 const bgmAudio = document.querySelector("#site-bgm");
 const bgmGuide = document.querySelector(".bgm-guide");
+const bgmPageGuide = document.querySelector(".bgm-page-guide");
 const sceneStageHashes = new Map([
   ["#projects", 1],
   ["#experience", 2],
@@ -145,6 +146,7 @@ const i18n = {
     bgmPlaying: "背景音乐正在播放，点击静音",
     bgmMuted: "背景音乐已静音，点击恢复声音",
     bgmGuideText: "这里可以打开音乐，简单地靠我的简历页面体验一下交互式音乐！",
+    bgmPageGuideText: "请自由翻页以体验音乐变化吧",
     openToolbox: "打开链接工具箱",
     toggleTheme: "切换深浅色",
     emailCopied: "邮箱已复制",
@@ -276,6 +278,7 @@ const i18n = {
     bgmPlaying: "Background music is playing. Click to mute.",
     bgmMuted: "Background music is muted. Click to turn sound back on.",
     bgmGuideText: "Turn on the music here and try a simple interactive music moment inside my resume page.",
+    bgmPageGuideText: "Turn the pages freely to experience the music changes.",
     openToolbox: "Open link toolbox",
     toggleTheme: "Toggle theme",
     emailCopied: "Email copied",
@@ -407,6 +410,7 @@ const i18n = {
     bgmPlaying: "BGM再生中。クリックでミュートします。",
     bgmMuted: "BGMはミュート中。クリックで音を戻します。",
     bgmGuideText: "ここから音楽を再生できます。履歴書ページの中で、簡単なインタラクティブ音楽を体験してみてください！",
+    bgmPageGuideText: "自由にページをめくって、音楽の変化を体験してみてください。",
     openToolbox: "リンクツールボックスを開く",
     toggleTheme: "テーマ切替",
     emailCopied: "メールをコピーしました",
@@ -425,6 +429,9 @@ let bgmUserMuted = false;
 let bgmGuideBounceTimer;
 let bgmGuideBounceResetTimer;
 let bgmGuideDismissTimer;
+let bgmPageGuideShown = false;
+let bgmPageGuideDismissed = false;
+let bgmPageGuideDismissTimer;
 
 if (storedTheme) {
   root.dataset.theme = storedTheme;
@@ -546,12 +553,39 @@ async function startBgm() {
   try {
     await bgmAudio.play();
     bgmStarted = true;
+    showBgmPageGuide();
     updateAudioButtonState();
     return true;
   } catch {
     updateAudioButtonState();
     return false;
   }
+}
+
+function showBgmPageGuide() {
+  if (!bgmPageGuide || bgmPageGuideShown || bgmPageGuideDismissed) return;
+
+  window.clearTimeout(bgmPageGuideDismissTimer);
+  bgmPageGuide.hidden = false;
+  bgmPageGuide.classList.remove("is-dismissing");
+  bgmPageGuideShown = true;
+
+  window.requestAnimationFrame(() => {
+    bgmPageGuide.classList.add("is-visible");
+  });
+}
+
+function dismissBgmPageGuide() {
+  if (!bgmPageGuide || bgmPageGuide.hidden || bgmPageGuide.classList.contains("is-dismissing")) return;
+
+  window.clearTimeout(bgmPageGuideDismissTimer);
+  bgmPageGuideDismissed = true;
+  bgmPageGuide.classList.add("is-dismissing");
+  bgmPageGuide.classList.remove("is-visible");
+
+  bgmPageGuideDismissTimer = window.setTimeout(() => {
+    bgmPageGuide.hidden = true;
+  }, 720);
 }
 
 function toggleBgmMute() {
@@ -835,6 +869,10 @@ function setupHomeMotion() {
 
     if (firstTransition > 0.02) {
       root.classList.add("projects-entered");
+    }
+
+    if (firstTransition >= 0.98 && bgmPageGuideShown && !bgmPageGuideDismissed) {
+      dismissBgmPageGuide();
     }
 
     if (secondTransition > 0.02) {

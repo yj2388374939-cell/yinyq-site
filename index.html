@@ -12,7 +12,7 @@
     <script>
       document.documentElement.classList.add("js");
     </script>
-    <link rel="stylesheet" href="styles.css?v=20260629-bgm-guide-3" />
+    <link rel="stylesheet" href="styles.css?v=20260629-bgm-page-guide" />
   </head>
   <body>
     <header class="site-header">
@@ -109,6 +109,14 @@
         <img class="bgm-guide-character" src="assets/bgm-guide-character.png" alt="" />
       </span>
       <p data-i18n="bgmGuideText">这里可以打开音乐，简单地靠我的简历页面体验一下交互式音乐！</p>
+    </aside>
+
+    <aside class="bgm-page-guide" aria-label="翻页音乐提示" hidden>
+      <span class="bgm-page-guide-character" aria-hidden="true">
+        <img class="bgm-page-guide-frame bgm-page-guide-frame-a" src="assets/bgm-page-guide-frame-1.png" alt="" />
+        <img class="bgm-page-guide-frame bgm-page-guide-frame-b" src="assets/bgm-page-guide-frame-2.png" alt="" />
+      </span>
+      <p data-i18n="bgmPageGuideText">请自由翻页以体验音乐变化吧</p>
     </aside>
 
     <main id="top">
@@ -741,6 +749,6 @@
 
     <div class="toast" role="status" aria-live="polite" hidden></div>
 
-    <script src="script.js?v=20260629-bgm-guide-3"></script>
+    <script src="script.js?v=20260629-bgm-page-guide"></script>
   </body>
 </html>
