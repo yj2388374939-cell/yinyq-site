@@ -414,6 +414,8 @@ let illustrationLayoutFrame = 0;
 let localTimeTimer;
 let toolboxCloseTimer;
 let bgmUnlockBound = false;
+let bgmAutoUnmuteTimer;
+let bgmUserMuted = false;
 
 if (storedTheme) {
   root.dataset.theme = storedTheme;
@@ -529,26 +531,48 @@ function unlockBgmOnGesture() {
 
   bgmUnlockBound = true;
   const unlock = () => {
-    startBgm().then((didStart) => {
+    startBgm({ mutedBootstrap: false }).then((didStart) => {
       if (!didStart) return;
       document.removeEventListener("pointerdown", unlock);
       document.removeEventListener("keydown", unlock);
+      document.removeEventListener("touchstart", unlock);
+      document.removeEventListener("wheel", unlock);
       bgmUnlockBound = false;
     });
   };
 
   document.addEventListener("pointerdown", unlock);
   document.addEventListener("keydown", unlock);
+  document.addEventListener("touchstart", unlock);
+  document.addEventListener("wheel", unlock);
 }
 
-async function startBgm() {
+function scheduleBgmAutoUnmute() {
+  if (!bgmAudio || bgmUserMuted) return;
+
+  window.clearTimeout(bgmAutoUnmuteTimer);
+  bgmAutoUnmuteTimer = window.setTimeout(() => {
+    if (!bgmAudio || bgmUserMuted) return;
+
+    bgmAudio.muted = false;
+    updateAudioButtonState();
+
+    if (bgmAudio.paused) {
+      startBgm({ mutedBootstrap: false });
+    }
+  }, 180);
+}
+
+async function startBgm({ mutedBootstrap = true } = {}) {
   if (!bgmAudio) return false;
 
   bgmAudio.volume = 0.42;
+  bgmAudio.muted = bgmUserMuted || (mutedBootstrap && bgmAudio.paused);
   updateAudioButtonState();
 
   try {
     await bgmAudio.play();
+    scheduleBgmAutoUnmute();
     updateAudioButtonState();
     return true;
   } catch {
@@ -561,9 +585,24 @@ async function startBgm() {
 function toggleBgmMute() {
   if (!audioButton || !bgmAudio) return;
 
-  bgmAudio.muted = !bgmAudio.muted;
+  bgmUserMuted = !bgmUserMuted;
+  window.clearTimeout(bgmAutoUnmuteTimer);
+  bgmAudio.muted = bgmUserMuted;
   updateAudioButtonState();
+  startBgm({ mutedBootstrap: false });
+}
+
+function setupBgmAutoplay() {
+  if (!bgmAudio) return;
+
   startBgm();
+  window.addEventListener("load", () => startBgm(), { once: true });
+  window.addEventListener("pageshow", () => startBgm());
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      startBgm({ mutedBootstrap: bgmAudio.paused });
+    }
+  });
 }
 
 function getSceneStageScrollTop(stageIndex) {
@@ -952,4 +991,4 @@ applyLanguage(localStorage.getItem("resume-language") || "zh");
 setupHomeMotion();
 setupIllustrationMasonry();
 setupLocalTime();
-startBgm();
+setupBgmAutoplay();
