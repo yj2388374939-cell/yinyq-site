@@ -400,29 +400,39 @@ a {
 
 .bgm-guide {
   position: fixed;
-  top: 64px;
-  right: clamp(142px, 12vw, 220px);
+  top: 58px;
+  right: clamp(86px, 7.5vw, 138px);
   z-index: 42;
   display: flex;
-  flex-direction: row-reverse;
+  flex-direction: column;
   align-items: flex-end;
-  gap: 10px;
+  gap: 0;
   pointer-events: none;
   opacity: 0;
   animation: bgmGuideFade 320ms ease-out 420ms forwards;
 }
 
-.bgm-guide-character {
+.bgm-guide-character-wrap {
+  display: block;
   width: clamp(126px, 8.8vw, 166px);
-  height: auto;
   transform-origin: 64% 84%;
   filter: drop-shadow(0 14px 22px rgba(20, 31, 31, 0.14));
   animation: bgmGuidePop 880ms cubic-bezier(0.16, 1, 0.3, 1) 500ms both;
 }
 
+.bgm-guide-character {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform-origin: 58% 86%;
+}
+
 .bgm-guide p {
-  width: min(260px, 32vw);
-  margin: 0 0 26px -8px;
+  position: absolute;
+  top: 22px;
+  right: calc(100% + 12px);
+  width: min(254px, 32vw);
+  margin: 0;
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -435,6 +445,27 @@ a {
   opacity: 0;
   transform: translate3d(10px, 8px, 0);
   animation: bgmGuideText 620ms ease-out 1040ms forwards;
+}
+
+.bgm-guide.is-bouncing .bgm-guide-character {
+  animation: bgmGuideRandomBounce 760ms cubic-bezier(0.17, 0.84, 0.29, 1.2) both;
+}
+
+.bgm-guide.is-dismissing {
+  animation: none;
+  opacity: 1;
+}
+
+.bgm-guide.is-dismissing .bgm-guide-character-wrap {
+  animation: bgmGuideDismiss 680ms cubic-bezier(0.17, 0.84, 0.29, 1.2) forwards;
+}
+
+.bgm-guide.is-dismissing p {
+  opacity: 0;
+  transform: translate3d(8px, 8px, 0) scale(0.96);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 
 .toolbox-popover {
@@ -494,6 +525,49 @@ a {
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes bgmGuideRandomBounce {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+  }
+
+  25% {
+    transform: translate3d(0, -7px, 0) scale(1.08, 0.94) rotate(-2deg);
+  }
+
+  48% {
+    transform: translate3d(0, 2px, 0) scale(0.94, 1.08) rotate(1.4deg);
+  }
+
+  70% {
+    transform: translate3d(0, -3px, 0) scale(1.03, 0.98) rotate(-0.8deg);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+  }
+}
+
+@keyframes bgmGuideDismiss {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+  }
+
+  36% {
+    opacity: 1;
+    transform: translate3d(0, -10px, 0) scale(1.14, 0.88) rotate(-2deg);
+  }
+
+  64% {
+    transform: translate3d(4px, 2px, 0) scale(0.9, 1.08) rotate(1deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(18px, -18px, 0) scale(0.64) rotate(5deg);
   }
 }
 
@@ -1310,18 +1384,17 @@ h3 {
 
   .bgm-guide {
     top: 118px;
-    right: 14px;
-    flex-direction: row-reverse;
-    gap: 6px;
+    right: 8px;
   }
 
-  .bgm-guide-character {
+  .bgm-guide-character-wrap {
     width: 102px;
   }
 
   .bgm-guide p {
-    width: min(188px, 48vw);
-    margin-bottom: 18px;
+    top: 18px;
+    right: calc(100% + 8px);
+    width: min(204px, 58vw);
     padding: 8px 10px;
     font-size: 12px;
   }
@@ -1467,6 +1540,7 @@ h3 {
 
 @media (prefers-reduced-motion: reduce) {
   .bgm-guide,
+  .bgm-guide-character-wrap,
   .bgm-guide-character,
   .bgm-guide p {
     opacity: 1;

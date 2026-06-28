@@ -4,6 +4,7 @@ const toolboxButton = document.querySelector('[data-action="toggle-toolbox"]');
 const toolboxPanel = document.querySelector("#toolbox-panel");
 const audioButton = document.querySelector('[data-action="toggle-bgm"]');
 const bgmAudio = document.querySelector("#site-bgm");
+const bgmGuide = document.querySelector(".bgm-guide");
 const sceneStageHashes = new Map([
   ["#projects", 1],
   ["#experience", 2],
@@ -421,6 +422,9 @@ let localTimeTimer;
 let toolboxCloseTimer;
 let bgmStarted = false;
 let bgmUserMuted = false;
+let bgmGuideBounceTimer;
+let bgmGuideBounceResetTimer;
+let bgmGuideDismissTimer;
 
 if (storedTheme) {
   root.dataset.theme = storedTheme;
@@ -575,6 +579,46 @@ function setupBgm() {
   bgmAudio.volume = 0.42;
   bgmAudio.muted = false;
   updateAudioButtonState();
+}
+
+function scheduleBgmGuideBounce() {
+  if (!bgmGuide || motionQuery.matches || bgmGuide.hidden || bgmGuide.classList.contains("is-dismissing")) return;
+
+  window.clearTimeout(bgmGuideBounceTimer);
+  window.clearTimeout(bgmGuideBounceResetTimer);
+
+  bgmGuideBounceTimer = window.setTimeout(
+    () => {
+      if (!bgmGuide || bgmGuide.hidden || bgmGuide.classList.contains("is-dismissing")) return;
+
+      bgmGuide.classList.add("is-bouncing");
+      bgmGuideBounceResetTimer = window.setTimeout(() => {
+        bgmGuide.classList.remove("is-bouncing");
+        scheduleBgmGuideBounce();
+      }, 820);
+    },
+    2600 + Math.random() * 4200,
+  );
+}
+
+function dismissBgmGuide() {
+  if (!bgmGuide || bgmGuide.hidden || bgmGuide.classList.contains("is-dismissing")) return;
+
+  window.clearTimeout(bgmGuideBounceTimer);
+  window.clearTimeout(bgmGuideBounceResetTimer);
+  window.clearTimeout(bgmGuideDismissTimer);
+  bgmGuide.classList.remove("is-bouncing");
+  bgmGuide.classList.add("is-dismissing");
+
+  bgmGuideDismissTimer = window.setTimeout(() => {
+    bgmGuide.hidden = true;
+  }, 720);
+}
+
+function setupBgmGuide() {
+  if (!bgmGuide) return;
+
+  scheduleBgmGuideBounce();
 }
 
 function getSceneStageScrollTop(stageIndex) {
@@ -940,6 +984,7 @@ document.addEventListener("click", (event) => {
 
   if (action === "toggle-bgm") {
     closeToolbox();
+    dismissBgmGuide();
     toggleBgmMute();
   }
 
@@ -964,3 +1009,4 @@ setupHomeMotion();
 setupIllustrationMasonry();
 setupLocalTime();
 setupBgm();
+setupBgmGuide();
