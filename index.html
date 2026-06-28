@@ -38,8 +38,8 @@
         <button
           class="icon-button audio-button"
           type="button"
-          data-action="audio-placeholder"
-          aria-label="音乐占位开关"
+          data-action="toggle-bgm"
+          aria-label="背景音乐静音开关"
           aria-pressed="false"
           data-i18n-aria="audioPlaceholder"
         >
@@ -99,6 +99,10 @@
         </button>
       </div>
     </header>
+
+    <audio class="site-bgm" id="site-bgm" preload="auto" autoplay loop aria-hidden="true">
+      <source src="assets/spring-dance.m4a" type="audio/mp4" />
+    </audio>
 
     <main id="top">
       <section class="intro-switch" aria-label="首页与重点项目">
@@ -730,6 +734,6 @@
 
     <div class="toast" role="status" aria-live="polite" hidden></div>
 
-    <script src="script.js?v=20260628-works-entry-guard"></script>
+    <script src="script.js?v=20260628-bgm"></script>
   </body>
 </html>

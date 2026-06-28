@@ -2,7 +2,8 @@ const root = document.documentElement;
 const toast = document.querySelector(".toast");
 const toolboxButton = document.querySelector('[data-action="toggle-toolbox"]');
 const toolboxPanel = document.querySelector("#toolbox-panel");
-const audioButton = document.querySelector('[data-action="audio-placeholder"]');
+const audioButton = document.querySelector('[data-action="toggle-bgm"]');
+const bgmAudio = document.querySelector("#site-bgm");
 const sceneStageHashes = new Map([
   ["#projects", 1],
   ["#experience", 2],
@@ -138,7 +139,9 @@ const i18n = {
     illustStoryboardTitle: "视觉小说分镜草图",
     illustStoryboardQuote: "“从镜头、姿态和场景关系开始寻找叙事节奏。”",
     copyEmail: "复制邮箱",
-    audioPlaceholder: "音乐占位开关",
+    audioPlaceholder: "背景音乐静音开关",
+    bgmPlaying: "背景音乐正在播放，点击静音",
+    bgmMuted: "背景音乐已静音，点击恢复声音",
     openToolbox: "打开链接工具箱",
     toggleTheme: "切换深浅色",
     emailCopied: "邮箱已复制",
@@ -265,7 +268,9 @@ const i18n = {
     illustStoryboardTitle: "Visual Novel Storyboard Sketch",
     illustStoryboardQuote: "\"Searching for narrative rhythm through camera, posture, and scene relationships.\"",
     copyEmail: "Copy email",
-    audioPlaceholder: "Music placeholder",
+    audioPlaceholder: "Background music mute switch",
+    bgmPlaying: "Background music is playing. Click to mute.",
+    bgmMuted: "Background music is muted. Click to turn sound back on.",
     openToolbox: "Open link toolbox",
     toggleTheme: "Toggle theme",
     emailCopied: "Email copied",
@@ -392,7 +397,9 @@ const i18n = {
     illustStoryboardTitle: "ビジュアルノベル絵コンテラフ",
     illustStoryboardQuote: "「カメラ、姿勢、場面関係から物語のリズムを探す。」",
     copyEmail: "メールをコピー",
-    audioPlaceholder: "音楽プレースホルダー",
+    audioPlaceholder: "BGMミュート切替",
+    bgmPlaying: "BGM再生中。クリックでミュートします。",
+    bgmMuted: "BGMはミュート中。クリックで音を戻します。",
     openToolbox: "リンクツールボックスを開く",
     toggleTheme: "テーマ切替",
     emailCopied: "メールをコピーしました",
@@ -406,6 +413,7 @@ let currentLanguage = "zh";
 let illustrationLayoutFrame = 0;
 let localTimeTimer;
 let toolboxCloseTimer;
+let bgmUnlockBound = false;
 
 if (storedTheme) {
   root.dataset.theme = storedTheme;
@@ -444,6 +452,7 @@ function applyLanguage(language) {
 
   localStorage.setItem("resume-language", currentLanguage);
   updateLocalTime();
+  updateAudioButtonState();
 }
 
 function showToast(message) {
@@ -502,12 +511,59 @@ function toggleToolbox() {
   toolboxButton.setAttribute("aria-expanded", String(shouldOpen));
 }
 
-function toggleAudioPlaceholder() {
-  if (!audioButton) return;
+function updateAudioButtonState() {
+  if (!audioButton || !bgmAudio) return;
 
-  const nextState = !audioButton.classList.contains("is-collapsed");
-  audioButton.classList.toggle("is-collapsed", nextState);
-  audioButton.setAttribute("aria-pressed", String(nextState));
+  const isMuted = bgmAudio.muted;
+  const dictionary = i18n[currentLanguage] || i18n.zh;
+  const label = isMuted ? dictionary.bgmMuted : dictionary.bgmPlaying;
+  audioButton.classList.toggle("is-collapsed", isMuted);
+  audioButton.classList.toggle("is-muted", isMuted);
+  audioButton.setAttribute("aria-pressed", String(isMuted));
+  audioButton.setAttribute("aria-label", label);
+  audioButton.title = label;
+}
+
+function unlockBgmOnGesture() {
+  if (!bgmAudio || bgmUnlockBound) return;
+
+  bgmUnlockBound = true;
+  const unlock = () => {
+    startBgm().then((didStart) => {
+      if (!didStart) return;
+      document.removeEventListener("pointerdown", unlock);
+      document.removeEventListener("keydown", unlock);
+      bgmUnlockBound = false;
+    });
+  };
+
+  document.addEventListener("pointerdown", unlock);
+  document.addEventListener("keydown", unlock);
+}
+
+async function startBgm() {
+  if (!bgmAudio) return false;
+
+  bgmAudio.volume = 0.42;
+  updateAudioButtonState();
+
+  try {
+    await bgmAudio.play();
+    updateAudioButtonState();
+    return true;
+  } catch {
+    unlockBgmOnGesture();
+    updateAudioButtonState();
+    return false;
+  }
+}
+
+function toggleBgmMute() {
+  if (!audioButton || !bgmAudio) return;
+
+  bgmAudio.muted = !bgmAudio.muted;
+  updateAudioButtonState();
+  startBgm();
 }
 
 function getSceneStageScrollTop(stageIndex) {
@@ -871,9 +927,9 @@ document.addEventListener("click", (event) => {
     copyEmail();
   }
 
-  if (action === "audio-placeholder") {
+  if (action === "toggle-bgm") {
     closeToolbox();
-    toggleAudioPlaceholder();
+    toggleBgmMute();
   }
 
   if (action === "toggle-toolbox") {
@@ -896,3 +952,4 @@ applyLanguage(localStorage.getItem("resume-language") || "zh");
 setupHomeMotion();
 setupIllustrationMasonry();
 setupLocalTime();
+startBgm();
