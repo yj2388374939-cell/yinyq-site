@@ -12,7 +12,7 @@
     <script>
       document.documentElement.classList.add("js");
     </script>
-    <link rel="stylesheet" href="styles.css?v=20260628-skills-contact-gap" />
+    <link rel="stylesheet" href="styles.css?v=20260629-bgm-guide" />
   </head>
   <body>
     <header class="site-header">
@@ -100,9 +100,14 @@
       </div>
     </header>
 
-    <audio class="site-bgm" id="site-bgm" preload="auto" autoplay loop muted playsinline aria-hidden="true">
+    <audio class="site-bgm" id="site-bgm" preload="auto" loop playsinline aria-hidden="true">
       <source src="assets/spring-dance.m4a" type="audio/mp4" />
     </audio>
+
+    <aside class="bgm-guide" aria-label="音乐按钮提示">
+      <img class="bgm-guide-character" src="assets/bgm-guide-character.png" alt="" aria-hidden="true" />
+      <p data-i18n="bgmGuideText">这里可以打开音乐，简单地靠我的简历页面体验一下交互式音乐！</p>
+    </aside>
 
     <main id="top">
       <section class="intro-switch" aria-label="首页与重点项目">
@@ -734,6 +739,6 @@
 
     <div class="toast" role="status" aria-live="polite" hidden></div>
 
-    <script src="script.js?v=20260628-bgm-autoplay"></script>
+    <script src="script.js?v=20260629-bgm-guide"></script>
   </body>
 </html>

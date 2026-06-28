@@ -139,9 +139,11 @@ const i18n = {
     illustStoryboardTitle: "视觉小说分镜草图",
     illustStoryboardQuote: "“从镜头、姿态和场景关系开始寻找叙事节奏。”",
     copyEmail: "复制邮箱",
-    audioPlaceholder: "背景音乐静音开关",
+    audioPlaceholder: "背景音乐开关",
+    bgmStart: "点击打开背景音乐",
     bgmPlaying: "背景音乐正在播放，点击静音",
     bgmMuted: "背景音乐已静音，点击恢复声音",
+    bgmGuideText: "这里可以打开音乐，简单地靠我的简历页面体验一下交互式音乐！",
     openToolbox: "打开链接工具箱",
     toggleTheme: "切换深浅色",
     emailCopied: "邮箱已复制",
@@ -268,9 +270,11 @@ const i18n = {
     illustStoryboardTitle: "Visual Novel Storyboard Sketch",
     illustStoryboardQuote: "\"Searching for narrative rhythm through camera, posture, and scene relationships.\"",
     copyEmail: "Copy email",
-    audioPlaceholder: "Background music mute switch",
+    audioPlaceholder: "Background music switch",
+    bgmStart: "Click to start the background music.",
     bgmPlaying: "Background music is playing. Click to mute.",
     bgmMuted: "Background music is muted. Click to turn sound back on.",
+    bgmGuideText: "Turn on the music here and try a simple interactive music moment inside my resume page.",
     openToolbox: "Open link toolbox",
     toggleTheme: "Toggle theme",
     emailCopied: "Email copied",
@@ -397,9 +401,11 @@ const i18n = {
     illustStoryboardTitle: "ビジュアルノベル絵コンテラフ",
     illustStoryboardQuote: "「カメラ、姿勢、場面関係から物語のリズムを探す。」",
     copyEmail: "メールをコピー",
-    audioPlaceholder: "BGMミュート切替",
+    audioPlaceholder: "BGM切替",
+    bgmStart: "クリックしてBGMを再生",
     bgmPlaying: "BGM再生中。クリックでミュートします。",
     bgmMuted: "BGMはミュート中。クリックで音を戻します。",
+    bgmGuideText: "ここから音楽を再生できます。履歴書ページの中で、簡単なインタラクティブ音楽を体験してみてください！",
     openToolbox: "リンクツールボックスを開く",
     toggleTheme: "テーマ切替",
     emailCopied: "メールをコピーしました",
@@ -413,8 +419,7 @@ let currentLanguage = "zh";
 let illustrationLayoutFrame = 0;
 let localTimeTimer;
 let toolboxCloseTimer;
-let bgmUnlockBound = false;
-let bgmAutoUnmuteTimer;
+let bgmStarted = false;
 let bgmUserMuted = false;
 
 if (storedTheme) {
@@ -516,67 +521,30 @@ function toggleToolbox() {
 function updateAudioButtonState() {
   if (!audioButton || !bgmAudio) return;
 
-  const isMuted = bgmAudio.muted;
   const dictionary = i18n[currentLanguage] || i18n.zh;
-  const label = isMuted ? dictionary.bgmMuted : dictionary.bgmPlaying;
-  audioButton.classList.toggle("is-collapsed", isMuted);
+  const isMuted = bgmStarted && bgmAudio.muted;
+  const label = !bgmStarted ? dictionary.bgmStart : isMuted ? dictionary.bgmMuted : dictionary.bgmPlaying;
+  audioButton.classList.toggle("is-collapsed", !bgmStarted || isMuted);
   audioButton.classList.toggle("is-muted", isMuted);
-  audioButton.setAttribute("aria-pressed", String(isMuted));
+  audioButton.classList.toggle("is-idle", !bgmStarted);
+  audioButton.setAttribute("aria-pressed", String(bgmStarted && !isMuted));
   audioButton.setAttribute("aria-label", label);
   audioButton.title = label;
 }
 
-function unlockBgmOnGesture() {
-  if (!bgmAudio || bgmUnlockBound) return;
-
-  bgmUnlockBound = true;
-  const unlock = () => {
-    startBgm({ mutedBootstrap: false }).then((didStart) => {
-      if (!didStart) return;
-      document.removeEventListener("pointerdown", unlock);
-      document.removeEventListener("keydown", unlock);
-      document.removeEventListener("touchstart", unlock);
-      document.removeEventListener("wheel", unlock);
-      bgmUnlockBound = false;
-    });
-  };
-
-  document.addEventListener("pointerdown", unlock);
-  document.addEventListener("keydown", unlock);
-  document.addEventListener("touchstart", unlock);
-  document.addEventListener("wheel", unlock);
-}
-
-function scheduleBgmAutoUnmute() {
-  if (!bgmAudio || bgmUserMuted) return;
-
-  window.clearTimeout(bgmAutoUnmuteTimer);
-  bgmAutoUnmuteTimer = window.setTimeout(() => {
-    if (!bgmAudio || bgmUserMuted) return;
-
-    bgmAudio.muted = false;
-    updateAudioButtonState();
-
-    if (bgmAudio.paused) {
-      startBgm({ mutedBootstrap: false });
-    }
-  }, 180);
-}
-
-async function startBgm({ mutedBootstrap = true } = {}) {
+async function startBgm() {
   if (!bgmAudio) return false;
 
   bgmAudio.volume = 0.42;
-  bgmAudio.muted = bgmUserMuted || (mutedBootstrap && bgmAudio.paused);
+  bgmAudio.muted = bgmUserMuted;
   updateAudioButtonState();
 
   try {
     await bgmAudio.play();
-    scheduleBgmAutoUnmute();
+    bgmStarted = true;
     updateAudioButtonState();
     return true;
   } catch {
-    unlockBgmOnGesture();
     updateAudioButtonState();
     return false;
   }
@@ -585,24 +553,28 @@ async function startBgm({ mutedBootstrap = true } = {}) {
 function toggleBgmMute() {
   if (!audioButton || !bgmAudio) return;
 
+  if (!bgmStarted) {
+    bgmUserMuted = false;
+    bgmAudio.muted = false;
+    startBgm();
+    return;
+  }
+
   bgmUserMuted = !bgmUserMuted;
-  window.clearTimeout(bgmAutoUnmuteTimer);
   bgmAudio.muted = bgmUserMuted;
   updateAudioButtonState();
-  startBgm({ mutedBootstrap: false });
+
+  if (bgmAudio.paused) {
+    startBgm();
+  }
 }
 
-function setupBgmAutoplay() {
+function setupBgm() {
   if (!bgmAudio) return;
 
-  startBgm();
-  window.addEventListener("load", () => startBgm(), { once: true });
-  window.addEventListener("pageshow", () => startBgm());
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) {
-      startBgm({ mutedBootstrap: bgmAudio.paused });
-    }
-  });
+  bgmAudio.volume = 0.42;
+  bgmAudio.muted = false;
+  updateAudioButtonState();
 }
 
 function getSceneStageScrollTop(stageIndex) {
@@ -991,4 +963,4 @@ applyLanguage(localStorage.getItem("resume-language") || "zh");
 setupHomeMotion();
 setupIllustrationMasonry();
 setupLocalTime();
-setupBgmAutoplay();
+setupBgm();
