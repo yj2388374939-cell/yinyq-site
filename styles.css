@@ -1353,6 +1353,10 @@ h3 {
   box-shadow: 0 10px 28px rgba(20, 31, 31, 0.06);
 }
 
+.illustration-card-wide {
+  grid-column: 1 / -1;
+}
+
 .illustration-card:hover,
 .illustration-card:focus-visible {
   border-color: var(--accent);
