@@ -1078,13 +1078,23 @@ function setupLocalTime() {
 
 document.addEventListener("click", (event) => {
   const anchor = event.target.closest("a[href]");
-  const stageIndex = anchor ? sceneStageHashes.get(anchor.getAttribute("href")) : null;
+  const href = anchor?.getAttribute("href");
+  const stageIndex = href ? sceneStageHashes.get(href) : null;
+  if (href === "#top" && window.matchMedia("(min-width: 861px)").matches && !motionQuery.matches) {
+    event.preventDefault();
+    window.history.pushState(null, "", "#top");
+    root.style.setProperty("--scene-x", "0vw");
+    document.querySelector(".portfolio-page")?.scrollTo({ top: 0, behavior: "auto" });
+    scrollToSceneStage(0);
+    return;
+  }
+
   if (stageIndex && window.matchMedia("(min-width: 861px)").matches && !motionQuery.matches) {
     event.preventDefault();
-    window.history.pushState(null, "", anchor.getAttribute("href"));
+    window.history.pushState(null, "", href);
     scrollToSceneStage(stageIndex);
     if (stageIndex === scenePanelCount - 1) {
-      window.setTimeout(() => scrollPortfolioTarget(anchor.getAttribute("href")), 420);
+      window.setTimeout(() => scrollPortfolioTarget(href), 420);
     }
     return;
   }
