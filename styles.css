@@ -268,7 +268,9 @@ a {
 }
 
 .nav a {
+  flex: 0 0 auto;
   padding: 8px 2px;
+  white-space: nowrap;
 }
 
 .nav a:hover,
@@ -400,13 +402,12 @@ a {
 
 .bgm-guide {
   position: fixed;
-  top: 58px;
-  right: clamp(86px, 7.5vw, 138px);
+  top: var(--bgm-guide-top, 58px);
+  left: var(--bgm-guide-left, calc(100vw - clamp(126px, 8.8vw, 166px) - clamp(86px, 7.5vw, 138px)));
+  right: auto;
   z-index: 42;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0;
+  display: block;
+  width: var(--bgm-guide-character-size, clamp(126px, 8.8vw, 166px));
   pointer-events: none;
   opacity: 0;
   animation: bgmGuideFade 320ms ease-out 420ms forwards;
@@ -414,7 +415,7 @@ a {
 
 .bgm-guide-character-wrap {
   display: block;
-  width: clamp(126px, 8.8vw, 166px);
+  width: var(--bgm-guide-character-size, clamp(126px, 8.8vw, 166px));
   transform-origin: 64% 84%;
   filter: drop-shadow(0 14px 22px rgba(20, 31, 31, 0.14));
   animation: bgmGuidePop 880ms cubic-bezier(0.16, 1, 0.3, 1) 500ms both;
@@ -429,9 +430,10 @@ a {
 
 .bgm-guide p {
   position: absolute;
-  top: 22px;
-  right: calc(100% + 12px);
-  width: min(254px, 32vw);
+  top: var(--bgm-guide-bubble-top, 22px);
+  left: var(--bgm-guide-bubble-left, calc(-1 * (min(254px, 32vw) + 12px)));
+  right: auto;
+  width: var(--bgm-guide-bubble-width, min(254px, 32vw));
   margin: 0;
   padding: 10px 12px;
   border: 1px solid var(--line);
@@ -1555,19 +1557,7 @@ h3 {
     width: min(224px, calc(100vw - 36px));
   }
 
-  .bgm-guide {
-    top: 118px;
-    right: 8px;
-  }
-
-  .bgm-guide-character-wrap {
-    width: 102px;
-  }
-
   .bgm-guide p {
-    top: 18px;
-    right: calc(100% + 8px);
-    width: min(204px, 58vw);
     padding: 8px 10px;
     font-size: 12px;
   }
@@ -1683,6 +1673,107 @@ h3 {
   }
 }
 
+@media (max-width: 1020px), (max-height: 760px) {
+  .intro-switch {
+    min-height: auto;
+    width: auto;
+    margin-left: 0;
+  }
+
+  .intro-switch-sticky {
+    position: static;
+    height: auto;
+  }
+
+  .js .intro-switch .scene-track {
+    position: static;
+    display: block;
+    width: auto;
+    height: auto;
+    transform: none !important;
+    transition: none;
+  }
+
+  .js .intro-switch .home-stage,
+  .js .intro-switch #projects,
+  .js .intro-switch #experience,
+  .js .intro-switch .portfolio-page {
+    position: static;
+    display: grid;
+    flex: none;
+    width: 100%;
+    height: auto;
+    padding-right: 0;
+    padding-left: 0;
+    opacity: 1 !important;
+    transform: none;
+    filter: none !important;
+    pointer-events: auto;
+  }
+
+  .js .intro-switch .portfolio-page {
+    overflow: visible;
+  }
+
+  .intro-switch .content-section {
+    padding: clamp(58px, 9vw, 96px) 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .home-stage {
+    min-height: auto;
+    align-content: start;
+    gap: clamp(20px, 4vw, 34px);
+    padding-bottom: clamp(42px, 8vw, 68px);
+  }
+
+  .home-stage .profile-section {
+    grid-template-columns: 1fr;
+    gap: clamp(20px, 4vw, 34px);
+    padding: clamp(34px, 6vw, 62px) 0 0;
+  }
+
+  .profile-copy {
+    min-width: 0;
+  }
+
+  .profile-side {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 300px));
+    align-items: start;
+    justify-content: start;
+    justify-items: stretch;
+  }
+
+  .profile-visual {
+    justify-content: flex-start;
+  }
+
+  .portrait-frame,
+  .local-time-card {
+    width: min(100%, 300px);
+  }
+
+  .contact-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  }
+
+  .contact-strip a,
+  .contact-strip span {
+    min-width: 0;
+  }
+
+  .section-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    padding-bottom: 0;
+  }
+
+  .metric {
+    min-height: clamp(84px, 12vw, 104px);
+    padding: clamp(14px, 2vw, 18px);
+  }
+}
+
 @media (max-width: 520px) {
   main {
     width: min(100% - 28px, 1120px);
@@ -1691,6 +1782,16 @@ h3 {
   .site-header {
     gap: 12px;
     padding: 12px 14px 0;
+  }
+
+  .nav {
+    width: min(100%, max(148px, calc(var(--bgm-guide-left-screen, 100vw) - 18px)));
+    gap: 10px;
+    scrollbar-width: none;
+  }
+
+  .nav::-webkit-scrollbar {
+    display: none;
   }
 
   .brand-text {

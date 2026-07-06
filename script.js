@@ -422,6 +422,7 @@ const storedTheme = localStorage.getItem("resume-theme");
 const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 let currentLanguage = "zh";
 let illustrationLayoutFrame = 0;
+let bgmGuideLayoutFrame = 0;
 let localTimeTimer;
 let toolboxCloseTimer;
 let bgmStarted = false;
@@ -471,6 +472,7 @@ function applyLanguage(language) {
   localStorage.setItem("resume-language", currentLanguage);
   updateLocalTime();
   updateAudioButtonState();
+  queueBgmGuideLayout();
 }
 
 function showToast(message) {
@@ -541,6 +543,7 @@ function updateAudioButtonState() {
   audioButton.setAttribute("aria-pressed", String(bgmStarted && !isMuted));
   audioButton.setAttribute("aria-label", label);
   audioButton.title = label;
+  queueBgmGuideLayout();
 }
 
 async function startBgm() {
@@ -615,6 +618,79 @@ function setupBgm() {
   updateAudioButtonState();
 }
 
+function clampNumber(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function getBgmGuideCharacterSize(viewportWidth, viewportHeight) {
+  const isCompactFrame = viewportWidth < 1020 || viewportHeight < 760;
+  const preferred = isCompactFrame
+    ? Math.min(viewportWidth * 0.095, viewportHeight * 0.18)
+    : Math.min(viewportWidth * 0.115, viewportHeight * 0.2);
+  const min = viewportWidth < 380 ? 70 : viewportWidth < 620 ? 76 : isCompactFrame ? 82 : 126;
+  const max = viewportWidth < 620 ? 96 : isCompactFrame ? (viewportWidth < 1020 ? 104 : 130) : 166;
+  return clampNumber(preferred, min, max);
+}
+
+function updateBgmGuideLayout() {
+  if (!bgmGuide || !audioButton) return;
+
+  const buttonRect = audioButton.getBoundingClientRect();
+  if (!buttonRect.width || !buttonRect.height) return;
+
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const margin = viewportWidth < 520 ? 8 : 12;
+  const characterAspect = 1238 / 1011;
+  const pointerTip = {
+    x: 0.956,
+    y: 0.148,
+  };
+  const targetX = buttonRect.left + buttonRect.width * 0.5;
+  const targetY = buttonRect.top + buttonRect.height * 0.5;
+  const maxByLeft = (targetX - margin) / pointerTip.x;
+  const maxByRight = (viewportWidth - margin - targetX) / Math.max(0.01, 1 - pointerTip.x);
+  const maxByBottom = (viewportHeight - margin - targetY) / (characterAspect * (1 - pointerTip.y));
+  const maxSize = Math.max(56, Math.min(maxByLeft, maxByRight, maxByBottom));
+  const characterSize = Math.min(getBgmGuideCharacterSize(viewportWidth, viewportHeight), maxSize);
+  const characterLeft = targetX - characterSize * pointerTip.x;
+  const characterTop = targetY - characterSize * characterAspect * pointerTip.y;
+  const characterHeight = characterSize * characterAspect;
+
+  bgmGuide.style.setProperty("--bgm-guide-left", `${Math.round(characterLeft)}px`);
+  bgmGuide.style.setProperty("--bgm-guide-top", `${Math.round(characterTop)}px`);
+  bgmGuide.style.setProperty("--bgm-guide-character-size", `${Math.round(characterSize)}px`);
+  root.style.setProperty("--bgm-guide-left-screen", `${Math.round(characterLeft)}px`);
+
+  const bubble = bgmGuide.querySelector("p");
+  if (!bubble) return;
+
+  const bubbleWidth = viewportWidth < 380 ? viewportWidth - margin * 2 : Math.min(254, viewportWidth - margin * 2);
+  bgmGuide.style.setProperty("--bgm-guide-bubble-width", `${Math.round(bubbleWidth)}px`);
+
+  const bubbleRect = bubble.getBoundingClientRect();
+  const bubbleHeight = bubbleRect.height || 72;
+  const bubbleGap = viewportWidth < 520 ? 8 : 12;
+  const headerRect = document.querySelector(".site-header")?.getBoundingClientRect();
+  const bubbleMinTop = (headerRect?.bottom || 0) + bubbleGap;
+  let bubbleLeft = characterLeft - bubbleWidth - bubbleGap;
+  let bubbleTop = Math.max(characterTop + characterHeight * 0.16, bubbleMinTop);
+
+  if (bubbleLeft < margin) {
+    bubbleLeft = clampNumber(targetX - bubbleWidth * 0.5, margin, viewportWidth - margin - bubbleWidth);
+    bubbleTop = Math.max(characterTop + characterHeight + bubbleGap, bubbleMinTop);
+  }
+
+  bubbleTop = clampNumber(bubbleTop, margin, Math.max(margin, viewportHeight - margin - bubbleHeight));
+  bgmGuide.style.setProperty("--bgm-guide-bubble-left", `${Math.round(bubbleLeft - characterLeft)}px`);
+  bgmGuide.style.setProperty("--bgm-guide-bubble-top", `${Math.round(bubbleTop - characterTop)}px`);
+}
+
+function queueBgmGuideLayout() {
+  window.cancelAnimationFrame(bgmGuideLayoutFrame);
+  bgmGuideLayoutFrame = window.requestAnimationFrame(updateBgmGuideLayout);
+}
+
 function scheduleBgmGuideBounce() {
   if (!bgmGuide || motionQuery.matches || bgmGuide.hidden || bgmGuide.classList.contains("is-dismissing")) return;
 
@@ -652,6 +728,9 @@ function dismissBgmGuide() {
 function setupBgmGuide() {
   if (!bgmGuide) return;
 
+  window.addEventListener("resize", queueBgmGuideLayout);
+  window.addEventListener("orientationchange", queueBgmGuideLayout);
+  queueBgmGuideLayout();
   scheduleBgmGuideBounce();
 }
 
