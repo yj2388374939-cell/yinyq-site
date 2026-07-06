@@ -646,7 +646,7 @@ function updateBgmGuideLayout() {
     x: 0.956,
     y: 0.148,
   };
-  const pointerGap = viewportWidth < 520 ? 6 : 8;
+  const pointerGap = viewportWidth < 520 ? 30 : 42;
   const targetX = buttonRect.left + buttonRect.width * 0.22;
   const targetY = buttonRect.bottom + pointerGap;
   const maxByLeft = (targetX - margin) / pointerTip.x;
@@ -685,6 +685,11 @@ function updateBgmGuideLayout() {
   bubbleTop = clampNumber(bubbleTop, margin, Math.max(margin, viewportHeight - margin - bubbleHeight));
   bgmGuide.style.setProperty("--bgm-guide-bubble-left", `${Math.round(bubbleLeft - characterLeft)}px`);
   bgmGuide.style.setProperty("--bgm-guide-bubble-top", `${Math.round(bubbleTop - characterTop)}px`);
+
+  const contentOffset = viewportWidth < 1020 || viewportHeight < 760
+    ? Math.max(0, bubbleTop + bubbleHeight - (headerRect?.bottom || 0) + bubbleGap)
+    : 0;
+  root.style.setProperty("--bgm-guide-content-offset", `${Math.round(contentOffset)}px`);
 }
 
 function queueBgmGuideLayout() {
@@ -731,6 +736,11 @@ function setupBgmGuide() {
 
   window.addEventListener("resize", queueBgmGuideLayout);
   window.addEventListener("orientationchange", queueBgmGuideLayout);
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 16) {
+      dismissBgmGuide();
+    }
+  }, { passive: true });
   queueBgmGuideLayout();
   scheduleBgmGuideBounce();
 }
