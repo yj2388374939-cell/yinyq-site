@@ -646,8 +646,9 @@ function updateBgmGuideLayout() {
     x: 0.956,
     y: 0.148,
   };
-  const targetX = buttonRect.left + buttonRect.width * 0.5;
-  const targetY = buttonRect.top + buttonRect.height * 0.5;
+  const pointerGap = viewportWidth < 520 ? 6 : 8;
+  const targetX = buttonRect.left + buttonRect.width * 0.22;
+  const targetY = buttonRect.bottom + pointerGap;
   const maxByLeft = (targetX - margin) / pointerTip.x;
   const maxByRight = (viewportWidth - margin - targetX) / Math.max(0.01, 1 - pointerTip.x);
   const maxByBottom = (viewportHeight - margin - targetY) / (characterAspect * (1 - pointerTip.y));
