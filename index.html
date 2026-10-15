@@ -15,7 +15,7 @@
         document.documentElement.classList.add("motion");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=20261016-carousel" />
+    <link rel="stylesheet" href="styles.css?v=20261016-gallery" />
   </head>
   <body>
     <header class="site-header">
@@ -79,6 +79,7 @@
             </div>
           </div>
         </div>
+        <div class="audio-wrap">
         <button
           class="icon-button audio-button"
           type="button"
@@ -95,6 +96,8 @@
             <path class="sound-bar sound-bar-5" d="M19 11v2" />
           </svg>
         </button>
+          <span class="bgm-hint" data-i18n="bgmHint" aria-hidden="true">打开背景音乐</span>
+        </div>
         <button class="icon-button" type="button" data-action="theme" aria-label="切换深浅色" data-i18n-aria="toggleTheme">
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z" />
@@ -104,24 +107,16 @@
       <span class="scroll-meter" aria-hidden="true"></span>
     </header>
 
-    <audio class="site-bgm" id="site-bgm" preload="auto" loop playsinline aria-hidden="true">
+    <audio class="site-bgm" id="site-bgm" preload="none" loop playsinline aria-hidden="true">
       <source src="assets/spring-dance.m4a" type="audio/mp4" />
     </audio>
 
-    <aside class="bgm-guide" aria-label="音乐按钮提示">
-      <span class="bgm-guide-character-wrap" aria-hidden="true">
-        <img width="1011" height="1238" class="bgm-guide-character" src="assets/bgm-guide-character.png" alt="" />
-      </span>
-      <p data-i18n="bgmGuideText">这里可以打开音乐，简单地靠我的简历页面体验一下交互式音乐！</p>
-    </aside>
-
-    <aside class="bgm-page-guide" aria-label="翻页音乐提示" hidden>
-      <span class="bgm-page-guide-character" aria-hidden="true">
-        <img width="433" height="600" class="bgm-page-guide-frame bgm-page-guide-frame-a" src="assets/bgm-page-guide-frame-1.png" alt="" />
-        <img width="433" height="600" class="bgm-page-guide-frame bgm-page-guide-frame-b" src="assets/bgm-page-guide-frame-2.png" alt="" />
-      </span>
-      <p data-i18n="bgmPageGuideText">请自由翻页以体验音乐变化吧</p>
-    </aside>
+    <!-- The BGM guide characters (.bgm-guide / .bgm-page-guide) are retired from
+         the page but kept for reuse: their images stay in assets/
+         (bgm-guide-character.png, bgm-page-guide-frame-1/2.png) and their CSS
+         and positioning code stay in styles.css / script.js. Restore by adding
+         the two <aside> blocks back from git tag
+         rollback-2026-10-16-before-gallery. -->
 
     <main id="top">
       <section class="hero" aria-label="首页概览">
@@ -971,6 +966,6 @@
 
     <div class="toast" role="status" aria-live="polite" hidden></div>
 
-    <script src="script.js?v=20261016-carousel"></script>
+    <script src="script.js?v=20261016-gallery"></script>
   </body>
 </html>

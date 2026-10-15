@@ -84,6 +84,9 @@ const i18n = {
     cardGameGallery: "卡牌游戏图片",
     carouselPrev: "上一张",
     carouselNext: "下一张",
+    galleryLabel: "插画作品",
+    galleryPrev: "上一页",
+    galleryNext: "下一页",
     metroidvaniaTitle: "类恶魔城游戏",
     metroidvaniaDescription: "进行游戏配乐、战斗段落音乐逻辑与动态音乐测试。",
     worksEyebrow: "Works",
@@ -137,6 +140,7 @@ const i18n = {
     bgmPlaying: "背景音乐正在播放，点击静音",
     bgmMuted: "背景音乐已静音，点击恢复声音",
     bgmGuideText: "这里可以打开音乐，简单地靠我的简历页面体验一下交互式音乐！",
+    bgmHint: "打开背景音乐",
     bgmPageGuideText: "请自由翻页以体验音乐变化吧",
     openToolbox: "打开链接工具箱",
     toggleTheme: "切换深浅色",
@@ -219,6 +223,9 @@ const i18n = {
     cardGameGallery: "Card game images",
     carouselPrev: "Previous image",
     carouselNext: "Next image",
+    galleryLabel: "Illustration works",
+    galleryPrev: "Previous page",
+    galleryNext: "Next page",
     metroidvaniaTitle: "Metroidvania-Style Game",
     metroidvaniaDescription: "Working on game scoring, battle music logic, and adaptive music tests.",
     worksEyebrow: "Works",
@@ -272,6 +279,7 @@ const i18n = {
     bgmPlaying: "Background music is playing. Click to mute.",
     bgmMuted: "Background music is muted. Click to turn sound back on.",
     bgmGuideText: "Turn on the music here and try a simple interactive music moment inside my resume page.",
+    bgmHint: "Turn on music",
     bgmPageGuideText: "Turn the pages freely to experience the music changes.",
     openToolbox: "Open link toolbox",
     toggleTheme: "Toggle theme",
@@ -354,6 +362,9 @@ const i18n = {
     cardGameGallery: "カードゲームの画像",
     carouselPrev: "前の画像",
     carouselNext: "次の画像",
+    galleryLabel: "イラスト作品",
+    galleryPrev: "前のページ",
+    galleryNext: "次のページ",
     metroidvaniaTitle: "メトロイドヴァニア系ゲーム",
     metroidvaniaDescription: "ゲーム音楽、バトルパートの音楽ロジック、アダプティブミュージックのテストを行っています。",
     worksEyebrow: "作品",
@@ -407,6 +418,7 @@ const i18n = {
     bgmPlaying: "BGM再生中。クリックでミュートします。",
     bgmMuted: "BGMはミュート中。クリックで音を戻します。",
     bgmGuideText: "ここから音楽を再生できます。履歴書ページの中で、簡単なインタラクティブ音楽を体験してみてください！",
+    bgmHint: "BGMをオン",
     bgmPageGuideText: "自由にページをめくって、音楽の変化を体験してみてください。",
     openToolbox: "リンクツールボックスを開く",
     toggleTheme: "テーマ切替",
@@ -732,6 +744,7 @@ function scheduleBgmGuideBounce() {
 }
 
 function dismissBgmGuide() {
+  dismissBgmHint();
   if (!bgmGuide || bgmGuide.hidden || bgmGuide.classList.contains("is-dismissing")) return;
 
   window.clearTimeout(bgmGuideBounceTimer);
@@ -743,6 +756,31 @@ function dismissBgmGuide() {
   bgmGuideDismissTimer = window.setTimeout(() => {
     bgmGuide.hidden = true;
   }, 720);
+}
+
+// Lightweight music hint: a label under the music button plus an idle pulse
+// on the button. Shown shortly after load until the visitor scrolls, plays
+// music, or ignores it for a while.
+const bgmHint = document.querySelector(".bgm-hint");
+let bgmHintTimer;
+
+function dismissBgmHint() {
+  window.clearTimeout(bgmHintTimer);
+  bgmHint?.classList.remove("is-visible");
+}
+
+function setupBgmHint() {
+  if (!bgmHint) return;
+
+  bgmHintTimer = window.setTimeout(() => {
+    if (bgmStarted || window.scrollY > 16) return;
+    bgmHint.classList.add("is-visible");
+    bgmHintTimer = window.setTimeout(dismissBgmHint, 12000);
+  }, 1400);
+
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 16) dismissBgmHint();
+  }, { passive: true });
 }
 
 function setupBgmGuide() {
@@ -992,6 +1030,120 @@ function setupPaging() {
   });
 }
 
+// Paged illustration gallery. The cards stay in index.html in newest-first
+// order (add new work there exactly as before); this splits them into sheets
+// of eight laid out as a fixed constructivist mosaic, turned horizontally by
+// swipe, arrows, page numbers or arrow keys. Without JS the original masonry
+// stays.
+const gallerySheetSize = 8;
+
+function setupGallery() {
+  const masonry = document.querySelector(".illustration-masonry");
+  const cards = masonry ? [...masonry.querySelectorAll(".illustration-card")] : [];
+  if (cards.length <= gallerySheetSize) return;
+
+  const dictionary = i18n[currentLanguage] || i18n.zh;
+  const pages = Math.ceil(cards.length / gallerySheetSize);
+  const pad = (n) => String(n).padStart(2, "0");
+  const arrow = (d) => `<svg aria-hidden="true" viewBox="0 0 24 24"><path d="${d}" /></svg>`;
+
+  const gallery = document.createElement("div");
+  gallery.className = "gallery";
+
+  const track = document.createElement("div");
+  track.className = "gallery-track";
+  track.tabIndex = 0;
+  track.setAttribute("role", "region");
+  track.setAttribute("aria-roledescription", "carousel");
+  track.dataset.i18nAria = "galleryLabel";
+  track.setAttribute("aria-label", dictionary.galleryLabel);
+
+  for (let page = 0; page < pages; page += 1) {
+    const sheet = document.createElement("div");
+    sheet.className = "gallery-sheet";
+    sheet.setAttribute("role", "group");
+    sheet.setAttribute("aria-label", `${page + 1} / ${pages}`);
+    cards.slice(page * gallerySheetSize, (page + 1) * gallerySheetSize).forEach((card) => sheet.append(card));
+
+    const mark = document.createElement("div");
+    mark.className = "sheet-mark";
+    mark.setAttribute("aria-hidden", "true");
+    mark.innerHTML = `<b>${pad(page + 1)}</b><span>/ ${pad(pages)}</span>`;
+    sheet.append(mark);
+    track.append(sheet);
+  }
+
+  const nav = document.createElement("div");
+  nav.className = "gallery-nav";
+  nav.innerHTML = `
+    <button class="gallery-step" type="button" data-step="-1" data-i18n-aria="galleryPrev" aria-label="${dictionary.galleryPrev}">${arrow("M15 5 8 12l7 7")}</button>
+    <div class="gallery-pages">${Array.from({ length: pages }, (_, i) => `<button type="button" data-page="${i}">${pad(i + 1)}</button>`).join("")}</div>
+    <button class="gallery-step" type="button" data-step="1" data-i18n-aria="galleryNext" aria-label="${dictionary.galleryNext}">${arrow("m9 5 7 7-7 7")}</button>
+    <span class="gallery-count" aria-live="polite"></span>`;
+
+  gallery.append(track, nav);
+  masonry.replaceWith(gallery);
+
+  const pageButtons = [...nav.querySelectorAll("[data-page]")];
+  const count = nav.querySelector(".gallery-count");
+  const sheets = [...track.children];
+  const currentIndex = () => Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+  const show = (index) => {
+    pageButtons.forEach((button, i) => button.setAttribute("aria-current", String(i === index)));
+    count.textContent = `${pad(index + 1)} / ${pad(pages)}`;
+  };
+  const sync = () => show(currentIndex());
+  const goTo = (index, instant = false) => {
+    const target = ((index % pages) + pages) % pages;
+    show(target); // reflect the destination right away, before the scroll lands
+    track.scrollTo({ left: target * track.clientWidth, behavior: instant || motionQuery.matches ? "auto" : "smooth" });
+  };
+  // Lazy images inside a horizontal scroller only load once scrolled to;
+  // start the neighbouring sheets early so turning a page never shows gaps.
+  // Only once the gallery is near the viewport, so opening the site stays light.
+  let galleryNear = false;
+  const warm = () => {
+    if (!galleryNear) return;
+    const index = currentIndex();
+    [index - 1, index, index + 1].forEach((i) => {
+      sheets[i]?.querySelectorAll('img[loading="lazy"]').forEach((img) => {
+        img.loading = "eager";
+      });
+    });
+  };
+  if ("IntersectionObserver" in window) {
+    const nearObserver = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        galleryNear = true;
+        warm();
+        nearObserver.disconnect();
+      }
+    }, { rootMargin: "600px 0px" });
+    nearObserver.observe(gallery);
+  } else {
+    galleryNear = true;
+  }
+
+  track.addEventListener("scroll", () => {
+    sync();
+    warm();
+  }, { passive: true });
+  nav.addEventListener("click", (event) => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    if (button.dataset.page) goTo(Number(button.dataset.page));
+    if (button.dataset.step) goTo(currentIndex() + Number(button.dataset.step));
+  });
+  track.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      goTo(currentIndex() + (event.key === "ArrowRight" ? 1 : -1));
+    }
+  });
+  window.addEventListener("resize", () => goTo(currentIndex(), true));
+  sync();
+}
+
 // Project image carousels: native horizontal scroll with snap points (so
 // trackpad and touch swipes page through), plus arrow buttons, arrow keys
 // and a position indicator.
@@ -1210,6 +1362,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 applyLanguage(readStorage("resume-language") || "zh");
+setupGallery();
 setupScrollState();
 setupPaging();
 setupReveal();
@@ -1219,3 +1372,4 @@ setupCarousels();
 setupLocalTime();
 setupBgm();
 setupBgmGuide();
+setupBgmHint();

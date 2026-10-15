@@ -392,6 +392,73 @@ main {
   }
 }
 
+/* Music hint: replaces the guide characters. A label hangs under the music
+   button; the button pulses while the music has never been started. */
+.audio-wrap {
+  position: relative;
+}
+
+.bgm-hint {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  z-index: 5;
+  padding: 7px 11px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  opacity: 0;
+  translate: 0 -8px;
+  pointer-events: none;
+  transition: opacity 320ms ease, translate 520ms var(--ease-out);
+}
+
+.bgm-hint::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  right: 12px;
+  width: 12px;
+  height: 12px;
+  background: var(--red);
+  rotate: 45deg;
+}
+
+.bgm-hint.is-visible {
+  opacity: 1;
+  translate: 0 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bgm-hint.is-visible {
+    animation: hintBob 1.8s ease-in-out 600ms infinite alternate;
+  }
+
+  .audio-button.is-idle {
+    animation: idlePulse 2.4s ease-out 1.4s infinite;
+  }
+}
+
+@keyframes hintBob {
+  to {
+    translate: 0 4px;
+  }
+}
+
+@keyframes idlePulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--red) 70%, transparent);
+  }
+
+  70%,
+  100% {
+    box-shadow: 0 0 0 10px transparent;
+  }
+}
+
 .scroll-meter {
   position: absolute;
   left: 0;
@@ -1550,7 +1617,7 @@ main {
   text-decoration: none;
 }
 
-.illustration-card-wide {
+.illustration-masonry .illustration-card-wide {
   grid-column: span 2;
 }
 
@@ -1563,52 +1630,52 @@ main {
     grid-template-columns: repeat(12, minmax(0, 1fr));
   }
 
-  .illustration-card {
+  .illustration-masonry .illustration-card {
     grid-column: span 4;
   }
 
-  .illustration-card-wide {
+  .illustration-masonry .illustration-card-wide {
     grid-column: span 8;
   }
 
-  .illustration-card:not(.illustration-card-wide):nth-child(8n + 1) {
+  .illustration-masonry .illustration-card:not(.illustration-card-wide):nth-child(8n + 1) {
     grid-column: span 5;
   }
 
-  .illustration-card:not(.illustration-card-wide):nth-child(8n + 2) {
+  .illustration-masonry .illustration-card:not(.illustration-card-wide):nth-child(8n + 2) {
     --drop: clamp(48px, 7vw, 112px);
   }
 
-  .illustration-card:not(.illustration-card-wide):nth-child(8n + 3) {
+  .illustration-masonry .illustration-card:not(.illustration-card-wide):nth-child(8n + 3) {
     --drop: clamp(20px, 3vw, 48px);
     grid-column: span 3;
   }
 
-  .illustration-card:not(.illustration-card-wide):nth-child(8n + 4) {
+  .illustration-masonry .illustration-card:not(.illustration-card-wide):nth-child(8n + 4) {
     padding-left: 12%;
   }
 
-  .illustration-card:not(.illustration-card-wide):nth-child(8n + 5) {
+  .illustration-masonry .illustration-card:not(.illustration-card-wide):nth-child(8n + 5) {
     --drop: clamp(64px, 9vw, 144px);
     grid-column: span 3;
   }
 
-  .illustration-card:not(.illustration-card-wide):nth-child(8n + 6) {
+  .illustration-masonry .illustration-card:not(.illustration-card-wide):nth-child(8n + 6) {
     --drop: clamp(24px, 3.5vw, 56px);
     grid-column: span 5;
     padding-right: 10%;
   }
 
-  .illustration-card:not(.illustration-card-wide):nth-child(8n + 7) {
+  .illustration-masonry .illustration-card:not(.illustration-card-wide):nth-child(8n + 7) {
     --drop: clamp(32px, 5vw, 80px);
   }
 
-  .illustration-card:not(.illustration-card-wide):nth-child(8n + 8) {
+  .illustration-masonry .illustration-card:not(.illustration-card-wide):nth-child(8n + 8) {
     padding-left: 18%;
   }
 
   /* Captions of the deepest drops sit flush right, against the grain. */
-  .illustration-card:not(.illustration-card-wide):is(:nth-child(8n + 2), :nth-child(8n + 5)) > div {
+  .illustration-masonry .illustration-card:not(.illustration-card-wide):is(:nth-child(8n + 2), :nth-child(8n + 5)) > div {
     text-align: right;
   }
 }
@@ -1665,6 +1732,265 @@ main {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.5;
+}
+
+/* Paged gallery (built by setupGallery in script.js) ------------------------- */
+/* Eight works per sheet in a fixed 12 × 6 mosaic: one large field, mixed
+   portrait/landscape/square cells, a red page block, and one cell left empty
+   on purpose. Thumbnails crop to their cell; the full work is on its page. */
+
+.gallery {
+  margin-top: clamp(20px, 2.5vw, 32px);
+}
+
+.gallery-track {
+  display: flex;
+  align-items: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.gallery-track::-webkit-scrollbar {
+  display: none;
+}
+
+.gallery-track:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+
+.gallery-sheet {
+  display: grid;
+  flex: 0 0 100%;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+  gap: clamp(10px, 1.2vw, 18px);
+  height: clamp(420px, calc(100svh - var(--header-h) - 190px), 820px);
+  padding: 10px;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.gallery-sheet .illustration-card {
+  --drop: 0px;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+}
+
+.gallery-sheet .illustration-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 22%;
+}
+
+.gallery-sheet .illustration-card > div {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 1;
+  max-width: calc(100% - 12px);
+  margin: 0;
+  padding: 5px 9px;
+  border: 0;
+  background: var(--ink);
+  color: var(--paper);
+  transition: background 200ms ease;
+}
+
+.gallery-sheet .illustration-card:hover > div,
+.gallery-sheet .illustration-card:focus-visible > div {
+  background: var(--red);
+  color: var(--on-red);
+}
+
+.gallery-sheet .illustration-card h4 {
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gallery-sheet .illustration-card p {
+  display: none;
+}
+
+.gallery-sheet > .illustration-card:nth-child(1) {
+  grid-area: 1 / 1 / 5 / 6;
+}
+
+.gallery-sheet > .illustration-card:nth-child(2) {
+  grid-area: 1 / 6 / 4 / 9;
+}
+
+.gallery-sheet > .illustration-card:nth-child(3) {
+  grid-area: 1 / 9 / 3 / 13;
+}
+
+.gallery-sheet > .illustration-card:nth-child(4) {
+  grid-area: 3 / 9 / 6 / 11;
+}
+
+.gallery-sheet > .illustration-card:nth-child(5) {
+  grid-area: 3 / 11 / 5 / 13;
+}
+
+.gallery-sheet > .illustration-card:nth-child(6) {
+  grid-area: 5 / 1 / 7 / 4;
+}
+
+.gallery-sheet > .illustration-card:nth-child(7) {
+  grid-area: 4 / 6 / 7 / 9;
+}
+
+.gallery-sheet > .illustration-card:nth-child(8) {
+  grid-area: 5 / 4 / 7 / 6;
+}
+
+.sheet-mark {
+  display: flex;
+  grid-area: 5 / 11 / 7 / 13;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 10px 12px;
+  background: var(--red);
+  color: var(--on-red);
+  line-height: 1;
+}
+
+.sheet-mark b {
+  font-size: clamp(32px, 4vw, 64px);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.05em;
+}
+
+.sheet-mark span {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.gallery-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 14px;
+  padding: 0 10px;
+}
+
+.gallery-pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.gallery-pages button {
+  min-width: 34px;
+  height: 30px;
+  padding: 0 6px;
+  border: 1.5px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 200ms ease, color 200ms ease, border-color 200ms ease;
+}
+
+.gallery-pages button:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.gallery-pages button[aria-current="true"] {
+  border-color: var(--red);
+  background: var(--red);
+  color: var(--on-red);
+}
+
+.gallery-step {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+  transition: background 200ms ease;
+}
+
+.gallery-step:hover,
+.gallery-step:focus-visible {
+  background: var(--red);
+}
+
+.gallery-step svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: square;
+}
+
+.gallery-count {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+}
+
+/* Phones and tablets: two columns of squares, the first and last of each
+   sheet full width, the page block as a bar. */
+@media (max-width: 860px) {
+  .gallery-sheet {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: none;
+    height: auto;
+  }
+
+  .gallery-sheet > .illustration-card:nth-child(n) {
+    grid-area: auto;
+    height: auto;
+    aspect-ratio: 1;
+  }
+
+  .gallery-sheet > .illustration-card:is(:nth-child(1), :nth-child(8)) {
+    grid-column: span 2;
+    aspect-ratio: 16 / 10;
+  }
+
+  .sheet-mark {
+    grid-area: auto;
+    grid-column: span 2;
+    flex-direction: row;
+    gap: 10px;
+    align-items: baseline;
+    justify-content: flex-start;
+  }
+
+  .sheet-mark b {
+    font-size: 32px;
+  }
+
+  .gallery-count {
+    width: 100%;
+    margin-left: 0;
+  }
 }
 
 /* Skills --------------------------------------------------------------------- */
@@ -2814,11 +3140,11 @@ main {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .illustration-card:not(.illustration-card-wide):nth-child(4n + 2) {
+  .illustration-masonry .illustration-card:not(.illustration-card-wide):nth-child(4n + 2) {
     --drop: 40px;
   }
 
-  .illustration-card:not(.illustration-card-wide):nth-child(4n + 3) {
+  .illustration-masonry .illustration-card:not(.illustration-card-wide):nth-child(4n + 3) {
     padding-right: 12%;
   }
 
@@ -2940,11 +3266,11 @@ main {
     grid-template-columns: 1fr;
   }
 
-  .illustration-card-wide {
+  .illustration-masonry .illustration-card-wide {
     grid-column: auto;
   }
 
-  .illustration-card.illustration-card:not(.illustration-card-wide):nth-child(n) {
+  .illustration-masonry .illustration-card.illustration-card:not(.illustration-card-wide):nth-child(n) {
     --drop: 0px;
     padding-right: 0;
   }
@@ -3031,5 +3357,27 @@ main {
   .illustration-card {
     opacity: 1 !important;
     translate: none !important;
+  }
+
+  .gallery-track {
+    display: block;
+    overflow: visible;
+  }
+
+  .gallery-sheet {
+    height: auto;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: none;
+    break-inside: avoid;
+  }
+
+  .gallery-sheet > .illustration-card:nth-child(n) {
+    grid-area: auto;
+    aspect-ratio: 1;
+  }
+
+  .gallery-nav,
+  .sheet-mark {
+    display: none;
   }
 }
