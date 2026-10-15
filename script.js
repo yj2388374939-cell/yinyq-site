@@ -1030,12 +1030,12 @@ function setupPaging() {
   });
 }
 
-// Lays out one gallery sheet so every work is shown whole: items are cut
-// into rows (order kept), every item in a row shares the row height and keeps
-// its own aspect ratio, so nothing is cropped. Every way of cutting the rows
-// is tried; each is scaled down to fit the height budget if needed, and the
-// one that shows the most image area wins. Row widths and alignment alternate
-// for a constructivist rhythm (scaled rows also leave asymmetric space).
+// Gallery layout: every work is shown whole. A sheet's items are cut into
+// rows (order kept); items in a row share its height and keep their own
+// aspect ratio, so nothing is cropped. Every row cut and every phase of the
+// row-width rhythm is tried, scaled to fit the height budget, and the one
+// showing the most image area wins. Row widths and alignment alternate for a
+// constructivist rhythm.
 const galleryRowShape = [
   { width: 1, align: "start" },
   { width: 0.88, align: "end" },
@@ -1045,72 +1045,69 @@ const galleryRowShape = [
 // Inner margin so the hover lift/shadow is not clipped by the scroller.
 const gallerySheetPad = 8;
 
-function layoutGallerySheet(sheet, outerWidth, outerBudget, gap) {
-  const pad = gallerySheetPad;
-  const width = outerWidth - pad * 2;
-  const heightBudget = outerBudget - pad * 2;
-  const items = [...sheet.children];
-  const ratios = items.map((item) => {
-    if (item.classList.contains("sheet-mark")) return width < 600 ? 2.4 : 0.72;
-    const img = item.querySelector("img");
-    const w = Number(img?.getAttribute("width")) || img?.naturalWidth || 1;
-    const h = Number(img?.getAttribute("height")) || img?.naturalHeight || 1;
-    return w / h;
-  });
-  const n = items.length;
-  // No work may shrink below this width (phones need bigger thumbnails).
+// ratios: aspect ratios of the sheet's items, the page block last.
+// Returns the best arrangement, or null.
+function planGallerySheet(ratios, width, heightBudget, gap) {
+  const n = ratios.length;
   const minItemWidth = width * (width < 600 ? 0.3 : 0.1);
   let best = null;
   let fallback = null;
 
-  // Try every row cut, and every starting phase of the row-width rhythm.
   for (let combo = 0; combo < (1 << (n - 1)) << 2; combo += 1) {
     const mask = combo >> 2;
     const phase = combo & 3;
     if (phase >= galleryRowShape.length) continue;
+
     const rows = [];
-    let start = 0;
+    let from = 0;
+    let total = 0;
     for (let i = 0; i < n; i += 1) {
-      if (i === n - 1 || mask & (1 << i)) {
-        rows.push([start, i + 1]);
-        start = i + 1;
+      if (i !== n - 1 && !(mask & (1 << i))) continue;
+      const to = i + 1;
+      const shape = galleryRowShape[(rows.length + phase) % galleryRowShape.length];
+      let ratioSum = 0;
+      let imageRatioSum = 0;
+      let minRatio = Infinity;
+      for (let k = from; k < to; k += 1) {
+        ratioSum += ratios[k];
+        if (k !== n - 1) imageRatioSum += ratios[k];
+        if (ratios[k] < minRatio) minRatio = ratios[k];
       }
+      const height = (width * shape.width - gap * (to - from - 1)) / ratioSum;
+      rows.push({ from, to, height, align: shape.align, imageRatioSum, minRatio });
+      total += height;
+      from = to;
     }
 
-    let total = gap * (rows.length - 1);
+    const gaps = gap * (rows.length - 1);
+    const scale = Math.min(1, (heightBudget - gaps) / total);
     let area = 0;
-    const shaped = rows.map(([from, to], r) => {
-      const shape = galleryRowShape[(r + phase) % galleryRowShape.length];
-      const rowWidth = width * shape.width;
-      const count = to - from;
-      const ratioSum = ratios.slice(from, to).reduce((sum, ratio) => sum + ratio, 0);
-      const height = (rowWidth - gap * (count - 1)) / ratioSum;
-      total += height;
-      area += ratioSum * height * height;
-      return { from, to, height, align: shape.align };
+    let narrowest = Infinity;
+    rows.forEach((row) => {
+      const h = row.height * scale;
+      area += row.imageRatioSum * h * h;
+      narrowest = Math.min(narrowest, row.minRatio * h);
     });
 
-    const scale = Math.min(1, (heightBudget - gap * (rows.length - 1)) / (total - gap * (rows.length - 1)));
-    const score = area * scale * scale;
-    const narrowest = Math.min(...shaped.flatMap((row) =>
-      ratios.slice(row.from, row.to).map((ratio) => ratio * row.height * scale),
-    ));
-    const candidate = { rows: shaped, scale, score };
+    const candidate = { rows, scale, area };
     if (narrowest >= minItemWidth) {
-      if (!best || score > best.score) best = candidate;
+      if (!best || area > best.area) best = candidate;
     } else if (!fallback || narrowest > fallback.narrowest) {
       fallback = { ...candidate, narrowest };
     }
   }
 
-  best = best || fallback;
-  if (!best) return;
+  return best || fallback;
+}
 
-  const { scale } = best;
+function applyGallerySheet(sheet, ratios, plan, width, gap) {
+  const pad = gallerySheetPad;
+  const items = [...sheet.children];
   let y = pad;
-  best.rows.forEach((row) => {
-    const height = row.height * scale;
-    const used = ratios.slice(row.from, row.to).reduce((sum, ratio) => sum + ratio * height, 0) + gap * (row.to - row.from - 1);
+  plan.rows.forEach((row) => {
+    const height = row.height * plan.scale;
+    let used = gap * (row.to - row.from - 1);
+    for (let i = row.from; i < row.to; i += 1) used += ratios[i] * height;
     let x = pad + (row.align === "end" ? width - used : 0);
     for (let i = row.from; i < row.to; i += 1) {
       const itemWidth = ratios[i] * height;
@@ -1127,22 +1124,63 @@ function layoutGallerySheet(sheet, outerWidth, outerBudget, gap) {
   sheet.style.height = `${Math.ceil(y - gap + pad)}px`;
 }
 
-// Paged illustration gallery. The cards stay in index.html in newest-first
-// order (add new work there exactly as before); this splits them into sheets
-// of eight laid out as a fixed constructivist mosaic, turned horizontally by
-// swipe, arrows, page numbers or arrow keys. Without JS the original masonry
-// stays.
-const gallerySheetSize = 8;
+// Splits the works (in order) into pages of 6–10 (the last may be shorter)
+// so that every page is as full as possible: dynamic programming over page
+// breaks, minimising the summed squared emptiness of the pages.
+const galleryPageMin = 6;
+const galleryPageMax = 10;
 
+function paginateGallery(cardRatios, markRatio, width, heightBudget, gap) {
+  const total = cardRatios.length;
+  const sheetArea = width * heightBudget;
+  const cost = new Array(total + 1).fill(Infinity);
+  const from = new Array(total + 1).fill(-1);
+  const plans = new Map();
+  cost[0] = 0;
+
+  for (let end = 1; end <= total; end += 1) {
+    const minSize = end === total ? 1 : galleryPageMin;
+    for (let size = minSize; size <= galleryPageMax && size <= end; size += 1) {
+      const start = end - size;
+      if (cost[start] === Infinity) continue;
+      const plan = planGallerySheet([...cardRatios.slice(start, end), markRatio], width, heightBudget, gap);
+      if (!plan) continue;
+      const emptiness = 1 - Math.min(1, plan.area / sheetArea);
+      const pageCost = cost[start] + emptiness * emptiness;
+      if (pageCost < cost[end]) {
+        cost[end] = pageCost;
+        from[end] = start;
+        plans.set(end, plan);
+      }
+    }
+  }
+
+  const pages = [];
+  for (let end = total; end > 0; end = from[end]) {
+    if (from[end] < 0) return null;
+    pages.unshift({ start: from[end], end, plan: plans.get(end) });
+  }
+  return pages;
+}
+
+// Paged illustration gallery. The cards stay in index.html in newest-first
+// order (add new work there exactly as before); this splits them into pages
+// of 6–10, each laid out to fill one screen, turned horizontally by swipe,
+// arrows, page numbers or arrow keys. Without JS the original masonry stays.
 function setupGallery() {
   const masonry = document.querySelector(".illustration-masonry");
   const cards = masonry ? [...masonry.querySelectorAll(".illustration-card")] : [];
-  if (cards.length <= gallerySheetSize) return;
+  if (cards.length <= galleryPageMax) return;
 
   const dictionary = i18n[currentLanguage] || i18n.zh;
-  const pages = Math.ceil(cards.length / gallerySheetSize);
   const pad = (n) => String(n).padStart(2, "0");
   const arrow = (d) => `<svg aria-hidden="true" viewBox="0 0 24 24"><path d="${d}" /></svg>`;
+  const cardRatios = cards.map((card) => {
+    const img = card.querySelector("img");
+    const w = Number(img?.getAttribute("width")) || img?.naturalWidth || 1;
+    const h = Number(img?.getAttribute("height")) || img?.naturalHeight || 1;
+    return w / h;
+  });
 
   const gallery = document.createElement("div");
   gallery.className = "gallery";
@@ -1155,46 +1193,36 @@ function setupGallery() {
   track.dataset.i18nAria = "galleryLabel";
   track.setAttribute("aria-label", dictionary.galleryLabel);
 
-  for (let page = 0; page < pages; page += 1) {
-    const sheet = document.createElement("div");
-    sheet.className = "gallery-sheet";
-    sheet.setAttribute("role", "group");
-    sheet.setAttribute("aria-label", `${page + 1} / ${pages}`);
-    cards.slice(page * gallerySheetSize, (page + 1) * gallerySheetSize).forEach((card) => sheet.append(card));
-
-    const mark = document.createElement("div");
-    mark.className = "sheet-mark";
-    mark.setAttribute("aria-hidden", "true");
-    mark.innerHTML = `<b>${pad(page + 1)}</b><span>/ ${pad(pages)}</span>`;
-    sheet.append(mark);
-    track.append(sheet);
-  }
-
   const nav = document.createElement("div");
   nav.className = "gallery-nav";
   nav.innerHTML = `
     <button class="gallery-step" type="button" data-step="-1" data-i18n-aria="galleryPrev" aria-label="${dictionary.galleryPrev}">${arrow("M15 5 8 12l7 7")}</button>
-    <div class="gallery-pages">${Array.from({ length: pages }, (_, i) => `<button type="button" data-page="${i}">${pad(i + 1)}</button>`).join("")}</div>
+    <div class="gallery-pages"></div>
     <button class="gallery-step" type="button" data-step="1" data-i18n-aria="galleryNext" aria-label="${dictionary.galleryNext}">${arrow("m9 5 7 7-7 7")}</button>
     <span class="gallery-count" aria-live="polite"></span>`;
 
   gallery.append(track, nav);
   masonry.replaceWith(gallery);
 
-  const pageButtons = [...nav.querySelectorAll("[data-page]")];
+  const pagesBox = nav.querySelector(".gallery-pages");
   const count = nav.querySelector(".gallery-count");
-  const sheets = [...track.children];
+  let sheets = [];
+  let pageButtons = [];
+  let pageKey = "";
+
   const currentIndex = () => Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
   const show = (index) => {
     pageButtons.forEach((button, i) => button.setAttribute("aria-current", String(i === index)));
-    count.textContent = `${pad(index + 1)} / ${pad(pages)}`;
+    count.textContent = `${pad(index + 1)} / ${pad(sheets.length)}`;
   };
   const sync = () => show(currentIndex());
   const goTo = (index, instant = false) => {
+    const pages = sheets.length;
     const target = ((index % pages) + pages) % pages;
     show(target); // reflect the destination right away, before the scroll lands
     track.scrollTo({ left: target * track.clientWidth, behavior: instant || motionQuery.matches ? "auto" : "smooth" });
   };
+
   // Lazy images inside a horizontal scroller only load once scrolled to;
   // start the neighbouring sheets early so turning a page never shows gaps.
   // Only once the gallery is near the viewport, so opening the site stays light.
@@ -1221,6 +1249,57 @@ function setupGallery() {
     galleryNear = true;
   }
 
+  // (Re)builds the sheets for the current width: picks page breaks, moves the
+  // cards into their sheets and places every item.
+  const layout = () => {
+    const anchor = sheets[currentIndex()]?.querySelector(".illustration-card");
+    const outerWidth = track.clientWidth;
+    const width = outerWidth - gallerySheetPad * 2;
+    const compact = outerWidth < 700;
+    const budget = (compact
+      ? Math.max(520, window.innerHeight * 1.25)
+      : clampNumber(window.innerHeight - getHeaderHeight() - 190, 420, 820)) - gallerySheetPad * 2;
+    const gap = compact ? 10 : clampNumber(outerWidth * 0.012, 10, 18);
+    const markRatio = width < 600 ? 2.4 : 0.72;
+
+    const pages = paginateGallery(cardRatios, markRatio, width, budget, gap);
+    if (!pages) return;
+
+    const key = pages.map((page) => page.end).join(",");
+    if (key !== pageKey) {
+      pageKey = key;
+      track.replaceChildren(...pages.map((page, index) => {
+        const sheet = document.createElement("div");
+        sheet.className = "gallery-sheet";
+        sheet.setAttribute("role", "group");
+        sheet.setAttribute("aria-label", `${index + 1} / ${pages.length}`);
+        sheet.append(...cards.slice(page.start, page.end));
+        const mark = document.createElement("div");
+        mark.className = "sheet-mark";
+        mark.setAttribute("aria-hidden", "true");
+        mark.innerHTML = `<b>${pad(index + 1)}</b><span>/ ${pad(pages.length)}</span>`;
+        sheet.append(mark);
+        return sheet;
+      }));
+      sheets = [...track.children];
+      pagesBox.innerHTML = pages
+        .map((_, i) => `<button type="button" data-page="${i}">${pad(i + 1)}</button>`)
+        .join("");
+      pageButtons = [...pagesBox.children];
+    }
+
+    pages.forEach((page, index) => {
+      const ratios = [...cardRatios.slice(page.start, page.end), markRatio];
+      applyGallerySheet(sheets[index], ratios, page.plan, width, gap);
+    });
+
+    // Stay on the page that holds the work that was in view.
+    const keep = anchor ? Math.max(0, sheets.findIndex((sheet) => sheet.contains(anchor))) : 0;
+    track.scrollTo({ left: keep * outerWidth, behavior: "auto" });
+    show(keep);
+    warm();
+  };
+
   track.addEventListener("scroll", () => {
     sync();
     warm();
@@ -1237,27 +1316,24 @@ function setupGallery() {
       goTo(currentIndex() + (event.key === "ArrowRight" ? 1 : -1));
     }
   });
-  // Height budget: the sheet plus its heading and page bar fit one screen on
-  // desktop; phones allow a taller sheet and scroll a little.
-  const layout = () => {
-    const index = currentIndex();
-    const width = track.clientWidth;
-    const headerH = getHeaderHeight();
-    const compact = width < 700;
-    const budget = compact
-      ? Math.max(520, window.innerHeight * 1.25)
-      : clampNumber(window.innerHeight - headerH - 190, 420, 820);
-    const gap = compact ? 10 : clampNumber(width * 0.012, 10, 18);
-    sheets.forEach((sheet) => layoutGallerySheet(sheet, width, budget, gap));
-    track.scrollTo({ left: index * width, behavior: "auto" });
-  };
+
   let layoutTimer = 0;
+  let lastWidth = 0;
+  let lastHeight = 0;
   window.addEventListener("resize", () => {
     window.clearTimeout(layoutTimer);
-    layoutTimer = window.setTimeout(layout, 80);
+    layoutTimer = window.setTimeout(() => {
+      // Mobile browsers fire resize when the toolbar shows/hides; ignore
+      // small height-only changes so pages don't reshuffle while scrolling.
+      if (window.innerWidth === lastWidth && Math.abs(window.innerHeight - lastHeight) < 120) return;
+      lastWidth = window.innerWidth;
+      lastHeight = window.innerHeight;
+      layout();
+    }, 120);
   });
+  lastWidth = window.innerWidth;
+  lastHeight = window.innerHeight;
   layout();
-  sync();
 }
 
 // Project image carousels: native horizontal scroll with snap points (so
