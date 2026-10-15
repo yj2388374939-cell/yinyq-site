@@ -752,6 +752,7 @@ function setupBgmGuide() {
 
 function setupScrollState() {
   const hero = document.querySelector(".hero");
+  const geoPages = [...document.querySelectorAll(".content-section")];
   let frame = 0;
 
   const update = () => {
@@ -763,6 +764,15 @@ function setupScrollState() {
     root.style.setProperty("--progress", clampNumber(scrollY / maxScroll, 0, 1).toFixed(4));
     root.style.setProperty("--hero-p", clampNumber(scrollY / heroHeight, 0, 1).toFixed(4));
     root.classList.toggle("is-scrolled", scrollY > 8);
+
+    // --enter: 0 while a page is below the fold, 1 once its top reaches the
+    // header. Drives the page geometry in styles.css.
+    const headerH = getHeaderHeight();
+    const span = Math.max(1, window.innerHeight - headerH);
+    geoPages.forEach((page) => {
+      const enter = clampNumber(1 - (page.getBoundingClientRect().top - headerH) / span, 0, 1);
+      page.style.setProperty("--enter", enter.toFixed(3));
+    });
 
     if (scrollY > window.innerHeight * 0.5 && bgmPageGuideShown && !bgmPageGuideDismissed) {
       dismissBgmPageGuide();
@@ -783,6 +793,193 @@ function setupScrollState() {
   window.addEventListener("load", () => {
     const target = window.location.hash ? document.getElementById(decodeURIComponent(window.location.hash.slice(1))) : null;
     window.requestAnimationFrame(() => target?.scrollIntoView({ behavior: "auto" }));
+  });
+}
+
+function getHeaderHeight() {
+  return document.querySelector(".site-header")?.offsetHeight || 0;
+}
+
+// Desktop paging: the hero and each nav section are pages. One wheel gesture
+// moves to the next page's heading. A page taller than the viewport (Works)
+// scrolls natively inside first; reaching its edge stops there, and the next
+// gesture turns the page. Trackpad momentum after a turn is swallowed so one
+// flick never skips pages.
+const pageQuery = window.matchMedia("(min-width: 861px) and (hover: hover) and (pointer: fine)");
+const pageTurnMs = 820;
+const pageSettleMs = 380;
+const wheelGapMs = 140;
+const swallowMaxMs = 1200;
+
+function getPageStops() {
+  const pages = [...document.querySelectorAll(".hero, .content-section, .contact-section")];
+  const headerH = getHeaderHeight();
+  const view = window.innerHeight - headerH;
+  const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+  const starts = pages.map((page, index) =>
+    index === 0 ? 0 : Math.min(maxScroll, Math.round(page.getBoundingClientRect().top + window.scrollY - headerH)),
+  );
+
+  return { pages, starts, ends: starts.map((start, index) =>
+    index < starts.length - 1 ? Math.max(start, starts[index + 1] - view) : maxScroll,
+  ) };
+}
+
+function setupPaging() {
+  let animating = false;
+  let swallow = false;
+  let swallowSince = 0;
+  let lastWheelAt = 0;
+  let frame = 0;
+
+  const syncMode = () => root.classList.toggle("paged", pageQuery.matches);
+  syncMode();
+  pageQuery.addEventListener?.("change", syncMode);
+
+  const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+  const animateTo = (target, duration = pageTurnMs) => {
+    window.cancelAnimationFrame(frame);
+    const from = window.scrollY;
+    const distance = target - from;
+
+    const finish = () => {
+      animating = false;
+      swallow = true;
+      swallowSince = performance.now();
+    };
+
+    if (motionQuery.matches || Math.abs(distance) < 2) {
+      window.scrollTo({ top: target, behavior: "auto" });
+      finish();
+      return;
+    }
+
+    animating = true;
+    const start = performance.now();
+    const step = (now) => {
+      const t = clampNumber((now - start) / duration, 0, 1);
+      window.scrollTo({ top: from + distance * easeInOutCubic(t), behavior: "auto" });
+      if (t < 1) {
+        frame = window.requestAnimationFrame(step);
+      } else {
+        finish();
+      }
+    };
+    frame = window.requestAnimationFrame(step);
+  };
+
+  const currentIndex = (starts) => {
+    const y = window.scrollY + 2;
+    let index = 0;
+    starts.forEach((start, i) => {
+      if (start <= y) index = i;
+    });
+    return index;
+  };
+
+  // Returns true when paging handled the move; false lets the browser scroll.
+  const turn = (direction, delta) => {
+    const { starts, ends } = getPageStops();
+    const index = currentIndex(starts);
+    const y = window.scrollY;
+
+    if (direction > 0) {
+      if (y < ends[index] - 2) {
+        if (y + delta > ends[index]) {
+          animateTo(ends[index], pageSettleMs);
+          return true;
+        }
+        return false;
+      }
+      if (index < starts.length - 1) {
+        animateTo(starts[index + 1]);
+        return true;
+      }
+      return false;
+    }
+
+    if (y > starts[index] + 2) {
+      if (y + delta < starts[index]) {
+        animateTo(starts[index], pageSettleMs);
+        return true;
+      }
+      return false;
+    }
+    if (index > 0) {
+      // Entering a tall page from below lands on its last screen.
+      animateTo(Math.max(starts[index - 1], ends[index - 1]));
+      return true;
+    }
+    return false;
+  };
+
+  window.addEventListener(
+    "wheel",
+    (event) => {
+      if (!root.classList.contains("paged") || event.ctrlKey || event.target.closest?.(".toolbox-popover")) return;
+      if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
+      const delta = event.deltaY * unit;
+      if (!delta) return;
+
+      const now = performance.now();
+      const gap = now - lastWheelAt;
+      lastWheelAt = now;
+
+      if (animating) {
+        event.preventDefault();
+        return;
+      }
+
+      if (swallow) {
+        if (gap < wheelGapMs && now - swallowSince < swallowMaxMs) {
+          event.preventDefault();
+          return;
+        }
+        swallow = false;
+      }
+
+      if (turn(Math.sign(delta), delta)) {
+        event.preventDefault();
+      }
+    },
+    { passive: false },
+  );
+
+  window.addEventListener("keydown", (event) => {
+    if (!root.classList.contains("paged") || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.target.closest?.("input, textarea, select, button, [contenteditable]")) return;
+
+    const keys = { PageDown: 1, PageUp: -1, " ": event.shiftKey ? -1 : 1 };
+    const direction = keys[event.key];
+    if (!direction) return;
+
+    event.preventDefault();
+    if (animating) return;
+
+    const delta = direction * (window.innerHeight - getHeaderHeight()) * 0.85;
+    if (!turn(direction, delta)) {
+      const { ends } = getPageStops();
+      const max = ends[ends.length - 1];
+      animateTo(clampNumber(window.scrollY + delta, 0, max), pageSettleMs);
+    }
+  });
+
+  // Nav links turn to their page instead of jumping.
+  document.addEventListener("click", (event) => {
+    const link = event.target.closest?.('a[href^="#"]');
+    if (!link || !root.classList.contains("paged")) return;
+
+    const id = link.getAttribute("href").slice(1);
+    const { pages, starts } = getPageStops();
+    const index = id === "top" ? 0 : pages.findIndex((page) => page.id === id);
+    if (index < 0) return;
+
+    event.preventDefault();
+    window.history.pushState(null, "", `#${id}`);
+    animateTo(starts[index]);
   });
 }
 
@@ -970,6 +1167,7 @@ document.addEventListener("keydown", (event) => {
 
 applyLanguage(readStorage("resume-language") || "zh");
 setupScrollState();
+setupPaging();
 setupReveal();
 setupScrollSpy();
 setupIllustrationMasonry();

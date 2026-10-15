@@ -17,6 +17,7 @@
   --gutter: clamp(16px, 4vw, 56px);
   --max: 1440px;
   --header-h: 64px;
+  --footer-h: 52px;
   --ease: cubic-bezier(0.7, 0, 0.2, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --hero-p: 0;
@@ -51,17 +52,20 @@ html {
   scroll-snap-type: y proximity;
 }
 
-/* Snap points: one per nav entry (项目 / 经历 / 作品 / 技能 / 联系), aligned to
-   each section's heading. The whole section is the snap area, so a section
-   taller than the viewport (Works) scrolls freely inside and only snaps at
-   its edges. */
+/* Pages: the hero plus one page per nav entry (项目 / 经历 / 作品 / 技能 / 联系).
+   On desktop script.js pages the wheel (html.paged): one gesture moves to the
+   next page's heading, and a page taller than the viewport (Works) scrolls
+   natively inside first. Touch and narrow screens fall back to CSS snapping;
+   the whole page is the snap area, so tall pages scroll freely inside. */
 .content-section,
 .contact-section {
   scroll-snap-align: start;
 }
 
-.content-section {
-  scroll-margin-top: clamp(12px, 2.5vw, 36px);
+html.paged {
+  scroll-behavior: auto;
+  scroll-padding-top: var(--header-h);
+  scroll-snap-type: none;
 }
 
 body {
@@ -792,7 +796,22 @@ main {
 
 .content-section {
   position: relative;
-  margin-top: clamp(72px, 10vw, 150px);
+  min-height: calc(100svh - var(--header-h));
+  padding: clamp(28px, 3.5vw, 52px) 0 clamp(24px, 3vw, 48px);
+}
+
+/* Alternate page tone so neighbouring pages read as separate sheets. The
+   shadow + clip-path pair bleeds the tint to the full window width. */
+#projects,
+#works {
+  background: var(--paper-2);
+  box-shadow: 0 0 0 100vmax var(--paper-2);
+  clip-path: inset(0 -100vmax);
+}
+
+#projects .project-media,
+#works .illustration-card img {
+  background: var(--paper);
 }
 
 .section-head {
@@ -801,8 +820,8 @@ main {
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 0 clamp(16px, 2vw, 32px);
   align-items: end;
-  padding-bottom: clamp(18px, 2vw, 28px);
-  margin-bottom: clamp(32px, 4vw, 56px);
+  padding-bottom: clamp(16px, 2vw, 28px);
+  margin-bottom: clamp(20px, 2.5vw, 36px);
 }
 
 .section-index {
@@ -810,7 +829,7 @@ main {
   grid-row: 1 / 3;
   align-self: end;
   color: var(--red);
-  font-size: clamp(72px, 11vw, 168px);
+  font-size: clamp(64px, min(11vw, 17svh), 168px);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.06em;
@@ -818,13 +837,13 @@ main {
 }
 
 .section-head .eyebrow {
-  grid-column: 4 / 13;
+  grid-column: 4 / 10;
   margin-bottom: 10px;
 }
 
 .section-head h2 {
-  grid-column: 4 / 13;
-  font-size: clamp(36px, 5.4vw, 84px);
+  grid-column: 4 / 10;
+  font-size: clamp(32px, min(5.4vw, 9svh), 84px);
   letter-spacing: -0.035em;
   line-height: 0.95;
 }
@@ -839,6 +858,256 @@ main {
   transform-origin: left;
 }
 
+/* Page geometry ------------------------------------------------------------- */
+/* Each page carries a small Suprematist composition to the right of its
+   heading. script.js writes --enter (0 → 1) on the page as it slides in;
+   every shape eases from an offset/rotated/scaled start into place. --sp makes
+   a shape arrive earlier, which staggers the composition. */
+
+.section-head > :not(.page-geo, .section-rule) {
+  position: relative;
+  z-index: 1;
+}
+
+/* The composition fills the heading block and is clipped at the heading
+   rule, so shapes never cross into the page content (they rise out of the
+   rule as the page enters). */
+.page-geo {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: clamp(220px, 25%, 360px);
+  clip-path: inset(-100vmax -100vmax 0 -100vmax);
+  pointer-events: none;
+}
+
+.g {
+  --k: clamp(0, calc((1 - var(--enter, 1)) * var(--sp, 1)), 1);
+  position: absolute;
+  display: block;
+  opacity: calc(1 - var(--k) * 1.2);
+  transform:
+    translate3d(calc(var(--k) * var(--gx, 0px)), calc(var(--k) * var(--gy, 0px)), 0)
+    rotate(calc(var(--r, 0deg) + var(--k) * var(--gr, 0deg)))
+    scale(calc(1 - var(--k) * var(--gs, 0)));
+  will-change: transform, opacity;
+}
+
+/* 01 Projects: tilted square, red diagonal, blue point, hairline */
+.geo-projects .g-sq {
+  --r: 12deg;
+  --gr: 110deg;
+  --gx: 160px;
+  --gy: -80px;
+  --gs: 0.5;
+  --sp: 1.2;
+  top: 4%;
+  right: 20%;
+  width: 40%;
+  aspect-ratio: 1;
+  background: var(--ink);
+}
+
+.geo-projects .g-bar {
+  --r: -20deg;
+  --gr: -14deg;
+  --gx: 420px;
+  --sp: 1.6;
+  top: 66%;
+  right: -6%;
+  width: 104%;
+  height: clamp(10px, 1vw, 15px);
+  background: var(--red);
+}
+
+.geo-projects .g-dot {
+  --gy: -220px;
+  --sp: 1.4;
+  top: 0;
+  right: 4%;
+  width: 15%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--blue);
+}
+
+.geo-projects .g-line {
+  --r: -20deg;
+  --gx: 600px;
+  top: 40%;
+  right: -16%;
+  width: 136%;
+  height: 2px;
+  background: var(--ink);
+}
+
+/* 02 Experience: a "Supremus" stack of bars */
+.geo-experience .g {
+  --r: -10deg;
+}
+
+.geo-experience .g-s1 {
+  --gx: 380px;
+  --sp: 1.9;
+  top: 6%;
+  right: 4%;
+  width: 70%;
+  height: clamp(10px, 1.1vw, 18px);
+  background: var(--ink);
+}
+
+.geo-experience .g-s2 {
+  --gx: 520px;
+  --sp: 1.6;
+  top: 26%;
+  right: 20%;
+  width: 46%;
+  height: clamp(22px, 2.6vw, 40px);
+  background: var(--red);
+}
+
+.geo-experience .g-s3 {
+  --gx: 640px;
+  --sp: 1.35;
+  top: 52%;
+  right: 0;
+  width: 88%;
+  height: clamp(5px, 0.5vw, 8px);
+  background: var(--ink);
+}
+
+.geo-experience .g-s4 {
+  --gx: 760px;
+  --sp: 1.15;
+  top: 64%;
+  right: 34%;
+  width: 30%;
+  height: clamp(14px, 1.7vw, 26px);
+  background: var(--yellow);
+}
+
+.geo-experience .g-s5 {
+  --r: 20deg;
+  --gr: 180deg;
+  --gy: 200px;
+  top: 76%;
+  right: 8%;
+  width: 13%;
+  aspect-ratio: 1;
+  background: var(--blue);
+}
+
+/* 03 Works: red disc crossed by a black slab and a yellow ray */
+.geo-works .g-disc {
+  --gs: 0.9;
+  --gy: 120px;
+  --sp: 1.3;
+  top: 4%;
+  right: 8%;
+  width: 42%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--red);
+}
+
+.geo-works .g-slab {
+  --r: -24deg;
+  --gr: 40deg;
+  --gx: 360px;
+  --sp: 1.5;
+  top: 48%;
+  right: 22%;
+  width: 58%;
+  height: 20%;
+  background: var(--ink);
+}
+
+.geo-works .g-ray {
+  --r: 34deg;
+  --gx: 500px;
+  --sp: 1.8;
+  top: 30%;
+  right: -12%;
+  width: 70%;
+  height: clamp(6px, 0.6vw, 10px);
+  background: var(--yellow);
+}
+
+.geo-works .g-line {
+  --r: 34deg;
+  --gx: 700px;
+  top: 58%;
+  right: -10%;
+  width: 130%;
+  height: 2px;
+  background: var(--ink);
+}
+
+.geo-works .g-chip {
+  --r: 45deg;
+  --gr: -180deg;
+  --gy: -160px;
+  --sp: 1.2;
+  top: 10%;
+  right: 66%;
+  width: 9%;
+  aspect-ratio: 1;
+  background: var(--blue);
+}
+
+/* 04 Skills: Malevich's black cross turning into place */
+.geo-skills {
+  --t: clamp(26px, 2.8vw, 42px);
+}
+
+.geo-skills .g-cross-h,
+.geo-skills .g-cross-v {
+  --r: 8deg;
+  --gr: 90deg;
+  --gs: 0.7;
+  --sp: 1.3;
+  background: var(--ink);
+}
+
+.geo-skills .g-cross-h {
+  top: calc(43% - var(--t) / 2);
+  left: 30%;
+  width: 62%;
+  height: var(--t);
+}
+
+.geo-skills .g-cross-v {
+  top: 6%;
+  left: calc(61% - var(--t) / 2);
+  width: var(--t);
+  height: 74%;
+}
+
+.geo-skills .g-tick {
+  --r: 45deg;
+  --gr: 135deg;
+  --gx: 200px;
+  --sp: 1.6;
+  top: 2%;
+  left: 14%;
+  width: 13%;
+  aspect-ratio: 1;
+  background: var(--red);
+}
+
+.geo-skills .g-line {
+  --r: -6deg;
+  --gx: 500px;
+  --sp: 1.1;
+  top: 90%;
+  left: -8%;
+  width: 116%;
+  height: 2px;
+  background: var(--ink);
+}
+
 /* Featured project ---------------------------------------------------------- */
 
 .featured-project {
@@ -846,7 +1115,7 @@ main {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 10px clamp(16px, 2vw, 32px);
-  padding: clamp(28px, 4vw, 56px);
+  padding: clamp(20px, 2.6vw, 40px) clamp(28px, 4vw, 56px);
   overflow: hidden;
   background: var(--ink);
   color: var(--paper);
@@ -920,7 +1189,16 @@ main {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: clamp(16px, 2vw, 32px);
-  margin-top: clamp(16px, 2vw, 32px);
+  margin-top: clamp(14px, 1.6vw, 24px);
+}
+
+/* On desktop pages the project images follow the window height so the
+   whole page fits one screen. */
+@media (min-width: 861px) {
+  .project-grid .project-media {
+    aspect-ratio: auto;
+    height: clamp(120px, 22svh, 300px);
+  }
 }
 
 .project-card {
@@ -1310,9 +1588,11 @@ main {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 32px clamp(16px, 2vw, 32px);
+  align-content: start;
   align-items: end;
-  margin: clamp(80px, 10vw, 160px) calc(50% - 50vw) 0;
-  padding: clamp(56px, 8vw, 120px) max(var(--gutter), calc((100vw - var(--max)) / 2));
+  min-height: calc(100svh - var(--header-h) - var(--footer-h));
+  margin: 0 calc(50% - 50vw);
+  padding: clamp(28px, 3.5vw, 52px) max(var(--gutter), calc((100vw - var(--max)) / 2)) clamp(56px, 8vw, 120px);
   overflow: hidden;
   background: var(--red);
   color: var(--on-red);
@@ -1427,6 +1707,7 @@ main {
 
 .site-footer {
   display: flex;
+  min-height: var(--footer-h);
   justify-content: space-between;
   align-items: center;
   padding: 18px var(--gutter);
@@ -2251,6 +2532,10 @@ main {
     display: inline;
   }
 
+  .page-geo {
+    width: 46%;
+  }
+
   .work-detail-main {
     padding-top: 32px;
   }
@@ -2453,6 +2738,10 @@ main {
     transform: rotate(var(--rot, 0deg));
   }
 
+  .g {
+    --k: 0;
+  }
+
   .audio-button .sound-bar {
     animation: none !important;
   }
@@ -2469,6 +2758,7 @@ main {
   .toast,
   .supre,
   .supre-mark,
+  .page-geo,
   .bgm-guide,
   .bgm-page-guide,
   .site-footer,
