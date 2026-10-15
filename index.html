@@ -11,8 +11,11 @@
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <script>
       document.documentElement.classList.add("js");
+      if (window.matchMedia && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        document.documentElement.classList.add("motion");
+      }
     </script>
-    <link rel="stylesheet" href="styles.css?v=20260706-top-reset" />
+    <link rel="stylesheet" href="styles.css?v=20261015-swiss" />
   </head>
   <body>
     <header class="site-header">
@@ -22,11 +25,11 @@
       </a>
 
       <nav class="nav" aria-label="主导航">
-        <a href="#projects" data-i18n="navProjects">项目</a>
-        <a href="#experience" data-i18n="navExperience">经历</a>
-        <a href="#works" data-i18n="navWorks">作品</a>
-        <a href="#skills" data-i18n="navSkills">技能</a>
-        <a href="#contact" data-i18n="navContact">联系</a>
+        <a href="#projects"><span class="nav-index" aria-hidden="true">01</span><span data-i18n="navProjects">项目</span></a>
+        <a href="#experience"><span class="nav-index" aria-hidden="true">02</span><span data-i18n="navExperience">经历</span></a>
+        <a href="#works"><span class="nav-index" aria-hidden="true">03</span><span data-i18n="navWorks">作品</span></a>
+        <a href="#skills"><span class="nav-index" aria-hidden="true">04</span><span data-i18n="navSkills">技能</span></a>
+        <a href="#contact"><span class="nav-index" aria-hidden="true">05</span><span data-i18n="navContact">联系</span></a>
       </nav>
 
       <div class="toolbar" aria-label="页面工具">
@@ -49,9 +52,9 @@
             <svg aria-hidden="true" viewBox="0 0 24 24">
               <path d="M8.5 8.5 15 5.5" />
               <path d="M8.5 10.5 15 17.5" />
-              <rect x="4" y="7" width="4.5" height="4.5" rx="1" />
-              <rect x="15" y="3.5" width="4.5" height="4.5" rx="1" />
-              <rect x="15" y="16" width="4.5" height="4.5" rx="1" />
+              <rect x="4" y="7" width="4.5" height="4.5" />
+              <rect x="15" y="3.5" width="4.5" height="4.5" />
+              <rect x="15" y="16" width="4.5" height="4.5" />
             </svg>
           </button>
 
@@ -98,6 +101,7 @@
           </svg>
         </button>
       </div>
+      <span class="scroll-meter" aria-hidden="true"></span>
     </header>
 
     <audio class="site-bgm" id="site-bgm" preload="auto" loop playsinline aria-hidden="true">
@@ -106,58 +110,61 @@
 
     <aside class="bgm-guide" aria-label="音乐按钮提示">
       <span class="bgm-guide-character-wrap" aria-hidden="true">
-        <img class="bgm-guide-character" src="assets/bgm-guide-character.png" alt="" />
+        <img width="1011" height="1238" class="bgm-guide-character" src="assets/bgm-guide-character.png" alt="" />
       </span>
       <p data-i18n="bgmGuideText">这里可以打开音乐，简单地靠我的简历页面体验一下交互式音乐！</p>
     </aside>
 
     <aside class="bgm-page-guide" aria-label="翻页音乐提示" hidden>
       <span class="bgm-page-guide-character" aria-hidden="true">
-        <img class="bgm-page-guide-frame bgm-page-guide-frame-a" src="assets/bgm-page-guide-frame-1.png" alt="" />
-        <img class="bgm-page-guide-frame bgm-page-guide-frame-b" src="assets/bgm-page-guide-frame-2.png" alt="" />
+        <img width="433" height="600" class="bgm-page-guide-frame bgm-page-guide-frame-a" src="assets/bgm-page-guide-frame-1.png" alt="" />
+        <img width="433" height="600" class="bgm-page-guide-frame bgm-page-guide-frame-b" src="assets/bgm-page-guide-frame-2.png" alt="" />
       </span>
       <p data-i18n="bgmPageGuideText">请自由翻页以体验音乐变化吧</p>
     </aside>
 
     <main id="top">
-      <section class="intro-switch" aria-label="首页与重点项目">
-        <div class="intro-switch-sticky">
-          <div class="scene-track">
-          <section class="home-stage" aria-label="首页概览">
-        <section class="profile-section" aria-labelledby="profile-title">
+      <section class="hero" aria-label="首页概览">
+        <div class="profile-section" aria-labelledby="profile-title">
           <div class="profile-copy">
-            <p class="eyebrow" data-i18n="profileEyebrow">个人简历 / Portfolio</p>
-            <h1 id="profile-title" data-i18n="profileName">殷雲清</h1>
-            <p class="alias-line">
-              <span data-i18n="aliasIntro">你可以称呼我</span>
-              <strong data-i18n="primaryAliases">殷雲清 / JAN WANCING / ヤン・ワンチン</strong>
-            </p>
-            <p class="common-name" data-i18n="commonAliases">
-              张云恺 / Klaus Zhang / ZHANG YUNKAI / チョウ・ウンカイ
-            </p>
-            <p class="role" data-i18n="role">作编曲 / 音响设计 / 平面设计 / 插画</p>
-            <p class="summary" data-i18n="summary">
-              关注声音、视觉与互动体验之间的叙事关系，持续创作音乐、声音设计、平面设计与插画项目。
-            </p>
+            <p class="eyebrow hero-step" data-i18n="profileEyebrow">个人简历 / Portfolio</p>
+            <h1 id="profile-title" class="hero-name" data-i18n="profileName">殷雲清</h1>
+            <p class="role hero-step" data-i18n="role">作编曲 / 音响设计 / 平面设计 / 插画</p>
+            <div class="profile-text hero-step">
+              <p class="alias-line">
+                <span data-i18n="aliasIntro">你可以称呼我</span>
+                <strong data-i18n="primaryAliases">殷雲清 / JAN WANCING / ヤン・ワンチン</strong>
+              </p>
+              <p class="common-name" data-i18n="commonAliases">
+                张云恺 / Klaus Zhang / ZHANG YUNKAI / チョウ・ウンカイ
+              </p>
+              <p class="summary" data-i18n="summary">
+                关注声音、视觉与互动体验之间的叙事关系，持续创作音乐、声音设计、平面设计与插画项目。
+              </p>
+            </div>
 
-            <div class="contact-strip" aria-label="核心联系方式">
+            <div class="contact-strip hero-step" aria-label="核心联系方式">
               <span data-i18n="newMedia">New Media & Game Design @ KR DCU</span>
               <span data-i18n="soundDesign">Sound Design @ Senzoku Gakuen</span>
             </div>
           </div>
 
           <div class="profile-side">
-            <div class="profile-visual">
-              <div class="portrait-frame">
-                <div class="portrait-card">
-                  <img class="portrait-image" src="assets/yinyunqing.jpg" alt="殷雲清个人标识" />
-                  <span class="portrait-line"></span>
-                  <span class="portrait-caption" data-i18n="portraitCaption">个人标识 / YINYUNQING</span>
-                </div>
-              </div>
+            <div class="supre supre-hero" aria-hidden="true">
+              <span class="shape s-plane"></span>
+              <span class="shape s-bar"></span>
+              <span class="shape s-square"></span>
+              <span class="shape s-circle"></span>
+              <span class="shape s-line"></span>
+              <span class="shape s-line s-line-b"></span>
+              <span class="shape s-chip"></span>
             </div>
+            <figure class="portrait-card hero-step">
+              <img width="640" height="640" class="portrait-image" src="assets/yinyunqing.jpg" alt="殷雲清个人标识" />
+              <figcaption class="portrait-caption" data-i18n="portraitCaption">个人标识 / YINYUNQING</figcaption>
+            </figure>
 
-            <aside class="local-time-card" aria-live="polite">
+            <aside class="local-time-card hero-step" aria-live="polite">
               <div class="local-time-header">
                 <span class="local-time-label" data-i18n="localTimeTitle">我所在的时间</span>
                 <span class="local-time-zone" data-i18n="localTimeZone">北京时间 / UTC+8</span>
@@ -166,31 +173,34 @@
               <span class="local-time-date" data-beijing-date></span>
             </aside>
           </div>
-        </section>
+        </div>
 
-        <section class="section-grid" aria-label="简历概览">
-          <article class="metric">
+        <div class="section-grid" aria-label="简历概览">
+          <article class="metric hero-step">
             <span class="metric-value" data-i18n="metricProjectsValue">6</span>
             <span class="metric-label" data-i18n="metricProjectsLabel">个项目</span>
           </article>
-          <article class="metric">
+          <article class="metric hero-step">
             <span class="metric-value" data-i18n="metricLanguagesValue">CN / JP / EN</span>
             <span class="metric-label" data-i18n="metricLanguagesLabel">工作语言</span>
           </article>
-          <article class="metric">
+          <article class="metric hero-step">
             <span class="metric-value" data-i18n="metricFieldsValue">2</span>
             <span class="metric-label" data-i18n="metricFieldsLabel">个专业方向</span>
           </article>
-        </section>
-          </section>
+        </div>
+      </section>
 
-          <section class="content-section" id="projects">
-        <div class="section-heading stacked-heading">
+      <section class="content-section" id="projects">
+        <div class="section-head" data-reveal>
+          <span class="section-index" aria-hidden="true">01</span>
           <p class="eyebrow" data-i18n="featuredProjectsEyebrow">Projects</p>
           <h2 data-i18n="featuredProjectsTitle">重点项目</h2>
+          <span class="section-rule" aria-hidden="true"></span>
         </div>
 
-        <div class="featured-project">
+        <div class="featured-project" data-reveal>
+          <span class="supre-mark" aria-hidden="true"></span>
           <p class="project-tag" data-i18n="studioTag">Independent Game Studio</p>
           <h3 data-i18n="studioTitle">独立游戏工作室</h3>
           <p data-i18n="studioDescription">
@@ -199,530 +209,523 @@
         </div>
 
         <div class="project-grid">
-          <article class="project-card">
-            <img src="assets/visual-novel-character.png" alt="视觉小说游戏角色设定图" />
-            <div>
-              <p class="project-tag">Visual Novel</p>
+          <article class="project-card" data-reveal>
+            <div class="project-media"><img width="1600" height="1200" loading="lazy" decoding="async" src="assets/visual-novel-character.png" alt="视觉小说游戏角色设定图" /></div>
+            <div class="project-body">
+              <p class="project-tag"><span class="project-no">A</span>Visual Novel</p>
               <h3 data-i18n="visualNovelTitle">视觉小说游戏</h3>
               <p data-i18n="visualNovelDescription">参与项目概念推进、视觉方向讨论与音乐氛围设计。</p>
             </div>
           </article>
 
-          <article class="project-card">
-            <img src="assets/game-illustration.png" alt="游戏角色插画" />
-            <div>
-              <p class="project-tag">Card Game</p>
+          <article class="project-card" data-reveal>
+            <div class="project-media"><img width="744" height="1039" loading="lazy" decoding="async" src="assets/game-illustration.png" alt="游戏角色插画" /></div>
+            <div class="project-body">
+              <p class="project-tag"><span class="project-no">B</span>Card Game</p>
               <h3 data-i18n="cardGameTitle">卡牌游戏</h3>
               <p data-i18n="cardGameDescription">负责角色插画、视觉素材与声音气质的协同设计。</p>
             </div>
           </article>
 
-          <article class="project-card">
-            <img src="assets/adaptive-music-unity.png" alt="Unity 中的自适应音乐测试界面" />
-            <div>
-              <p class="project-tag">Metroidvania</p>
+          <article class="project-card" data-reveal>
+            <div class="project-media"><img width="1920" height="1080" loading="lazy" decoding="async" src="assets/adaptive-music-unity.png" alt="Unity 中的自适应音乐测试界面" /></div>
+            <div class="project-body">
+              <p class="project-tag"><span class="project-no">C</span>Metroidvania</p>
               <h3 data-i18n="metroidvaniaTitle">类恶魔城游戏</h3>
               <p data-i18n="metroidvaniaDescription">进行游戏配乐、战斗段落音乐逻辑与动态音乐测试。</p>
             </div>
           </article>
         </div>
-          </section>
+      </section>
 
-          <section class="content-section" id="experience">
-        <div class="section-heading stacked-heading title-first-heading">
-          <h2 data-i18n="projectExperienceTitle">项目经历</h2>
+      <section class="content-section" id="experience">
+        <div class="section-head" data-reveal>
+          <span class="section-index" aria-hidden="true">02</span>
           <p class="eyebrow" data-i18n="projectExperienceEyebrow">Projects</p>
+          <h2 data-i18n="projectExperienceTitle">项目经历</h2>
+          <span class="section-rule" aria-hidden="true"></span>
         </div>
 
         <div class="timeline">
-          <article class="timeline-item">
+          <article class="timeline-item" data-reveal>
             <div class="timeline-date">2026.06</div>
-            <div class="timeline-body">
-              <h3 data-i18n="expDonguriTitle">游戏《ドングリ》</h3>
-              <p class="project-role" data-i18n="expDonguriRole">配乐</p>
-            </div>
+            <h3 data-i18n="expDonguriTitle">游戏《ドングリ》</h3>
+            <p class="project-role" data-i18n="expDonguriRole">配乐</p>
           </article>
 
-          <article class="timeline-item">
+          <article class="timeline-item" data-reveal>
             <div class="timeline-date">2023.05</div>
-            <div class="timeline-body">
-              <h3 data-i18n="expGacTitle">广汽传祺 E9 发布会</h3>
-              <p class="project-role" data-i18n="expGacRole">音乐顾问</p>
-            </div>
+            <h3 data-i18n="expGacTitle">广汽传祺 E9 发布会</h3>
+            <p class="project-role" data-i18n="expGacRole">音乐顾问</p>
           </article>
 
-          <article class="timeline-item">
+          <article class="timeline-item" data-reveal>
             <div class="timeline-date">2022.11</div>
-            <div class="timeline-body">
-              <h3 data-i18n="expAntiDrugTitle">广州市公用事业技师学院 - 广州市禁毒主题文艺作品创作</h3>
-              <p class="project-role" data-i18n="expAntiDrugRole">作编曲</p>
-            </div>
+            <h3 data-i18n="expAntiDrugTitle">广州市公用事业技师学院 - 广州市禁毒主题文艺作品创作</h3>
+            <p class="project-role" data-i18n="expAntiDrugRole">作编曲</p>
           </article>
 
-          <article class="timeline-item">
+          <article class="timeline-item" data-reveal>
             <div class="timeline-date">2022.06</div>
-            <div class="timeline-body">
-              <h3 data-i18n="expHospitalTitle">广东省人民医院 5G 医疗宣传片</h3>
-              <p class="project-role" data-i18n="expHospitalRole">场景布置 / 音乐顾问</p>
-            </div>
+            <h3 data-i18n="expHospitalTitle">广东省人民医院 5G 医疗宣传片</h3>
+            <p class="project-role" data-i18n="expHospitalRole">场景布置 / 音乐顾问</p>
           </article>
 
-          <article class="timeline-item">
+          <article class="timeline-item" data-reveal>
             <div class="timeline-date">2021.06</div>
-            <div class="timeline-body">
-              <h3 data-i18n="expCmccMvTitle">中国移动广东公司中国共产党 100 周年党庆 MV</h3>
-              <p class="project-role" data-i18n="expCmccMvRole">音乐担当</p>
-            </div>
+            <h3 data-i18n="expCmccMvTitle">中国移动广东公司中国共产党 100 周年党庆 MV</h3>
+            <p class="project-role" data-i18n="expCmccMvRole">音乐担当</p>
           </article>
 
-          <article class="timeline-item">
+          <article class="timeline-item" data-reveal>
             <div class="timeline-date">2021.03</div>
-            <div class="timeline-body">
-              <h3 data-i18n="expCmccAnnualTitle">中国移动广东公司年会 - 誓师大会</h3>
-              <p class="project-role" data-i18n="expCmccAnnualRole">音响调度</p>
-            </div>
+            <h3 data-i18n="expCmccAnnualTitle">中国移动广东公司年会 - 誓师大会</h3>
+            <p class="project-role" data-i18n="expCmccAnnualRole">音响调度</p>
           </article>
         </div>
-          </section>
+      </section>
 
-          <section class="portfolio-page" aria-label="作品展示、技能与联系">
-            <section class="content-section" id="works">
-        <div class="section-heading stacked-heading">
+      <section class="content-section" id="works">
+        <div class="section-head" data-reveal>
+          <span class="section-index" aria-hidden="true">03</span>
           <p class="eyebrow" data-i18n="worksEyebrow">Works</p>
           <h2 data-i18n="worksTitle">作品展示</h2>
+          <span class="section-rule" aria-hidden="true"></span>
         </div>
 
-        <div class="works-block">
-          <div class="subsection-heading">
-            <h3 data-i18n="musicWorksTitle">音乐作品</h3>
-            <p data-i18n="musicWorksIntro">按时间从新到旧排列。</p>
-          </div>
-
-          <div class="music-list">
-            <a
-              class="music-item"
-              href="https://www.bilibili.com/video/BV1VV2FBqE2w/?spm_id_from=333.1387.0.0&amp;vd_source=e5dacc84523148e5efbb05dece131a79"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <span class="music-index">01</span>
-              <div>
-                <h4 data-i18n="musicBuildEmpireTitle">Build My Empire</h4>
-                <p data-i18n="musicBuildEmpireMeta">BanG Dream 同人曲</p>
-              </div>
-              <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
-            </a>
-
-            <a
-              class="music-item"
-              href="https://music.163.com/song?id=1994412519&amp;uct2=U2FsdGVkX1+DlUOmINiNtp8G2CH1si2AFWpfS21Ehy8="
-              target="_blank"
-              rel="noreferrer"
-            >
-              <span class="music-index">02</span>
-              <div>
-                <h4 data-i18n="musicDangerousSugarTitle">危险糖衣</h4>
-                <p data-i18n="musicDangerousSugarMeta">为禁毒宣传所作</p>
-              </div>
-              <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
-            </a>
-
-            <a
-              class="music-item"
-              href="https://music.163.com/song?id=1973417078&amp;uct2=U2FsdGVkX1/84NIboWzxRkrPZ6quiNlnYW3wiSoNUf0="
-              target="_blank"
-              rel="noreferrer"
-            >
-              <span class="music-index">03</span>
-              <div>
-                <h4 data-i18n="musicExistenceTitle">Existence</h4>
-                <p data-i18n="musicExistenceMeta">原创音乐作品</p>
-              </div>
-              <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
-            </a>
-
-            <a
-              class="music-item"
-              href="https://music.163.com/song?id=1939350742&amp;uct2=U2FsdGVkX182zsPxAMvysIm/hq2tuWXIh0nwSFsv1FE="
-              target="_blank"
-              rel="noreferrer"
-            >
-              <span class="music-index">04</span>
-              <div>
-                <h4 data-i18n="musicShanghaiAliceTitle">明治十七年上海爱丽丝舞曲</h4>
-                <p data-i18n="musicShanghaiAliceMeta">東方Project 同人曲</p>
-              </div>
-              <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
-            </a>
-
-            <a
-              class="music-item"
-              href="https://music.163.com/song?id=1939690181&amp;uct2=U2FsdGVkX18o2dPm3ZRzFQTbyOCmKaeMZvVVn6AvLqA="
-              target="_blank"
-              rel="noreferrer"
-            >
-              <span class="music-index">05</span>
-              <div>
-                <h4 data-i18n="musicFloweringNightTitle">Flowering night No.11 I.Walts</h4>
-                <p data-i18n="musicFloweringNightMeta">東方Project 同人曲</p>
-              </div>
-              <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
-            </a>
-
-            <a
-              class="music-item"
-              href="https://music.163.com/song?id=1919472964&amp;uct2=U2FsdGVkX1/qCrBQDgq5+xn7b+sHGb4WPWjiu0iWSf8="
-              target="_blank"
-              rel="noreferrer"
-            >
-              <span class="music-index">06</span>
-              <div>
-                <h4 data-i18n="musicInheritanceTitle">继承之歌</h4>
-                <p data-i18n="musicInheritanceMeta">动画《无职转生》第一季 OP2 弦乐改编</p>
-              </div>
-              <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
-            </a>
-
-            <a
-              class="music-item"
-              href="https://music.163.com/song?id=1821217335&amp;uct2=U2FsdGVkX19ugkRh7gQtm8c64C2ysbq0BTsWtJzj62s="
-              target="_blank"
-              rel="noreferrer"
-            >
-              <span class="music-index">07</span>
-              <div>
-                <h4 data-i18n="musicTravelerTitle">旅人之歌</h4>
-                <p data-i18n="musicTravelerMeta">动画《无职转生》第一季 OP1 弦乐改编</p>
-              </div>
-              <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
-            </a>
-          </div>
+      <div class="works-block">
+        <div class="subsection-heading">
+          <h3 data-i18n="musicWorksTitle">音乐作品</h3>
+          <p data-i18n="musicWorksIntro">按时间从新到旧排列。</p>
         </div>
 
-        <div class="works-block">
-          <div class="subsection-heading">
-            <h3 data-i18n="illustrationWorksTitle">插画作品</h3>
-            <p data-i18n="illustrationWorksIntro">按时间从新到旧排列。</p>
-          </div>
+        <div class="music-list">
+          <a
+            class="music-item"
+            href="https://www.bilibili.com/video/BV1VV2FBqE2w/?spm_id_from=333.1387.0.0&amp;vd_source=e5dacc84523148e5efbb05dece131a79"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span class="music-index">01</span>
+            <div>
+              <h4 data-i18n="musicBuildEmpireTitle">Build My Empire</h4>
+              <p data-i18n="musicBuildEmpireMeta">BanG Dream 同人曲</p>
+            </div>
+            <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
+          </a>
 
-          <div class="illustration-masonry">
-            <a class="illustration-card illustration-card-wide" href="works/rabbit-before-snake.html">
-              <img src="assets/rabbit-before-snake.png" alt="「Like a rabbit before a snake.」" />
-              <div>
-                <h4>「Like a rabbit before a snake.」</h4>
-              </div>
-            </a>
+          <a
+            class="music-item"
+            href="https://music.163.com/song?id=1994412519&amp;uct2=U2FsdGVkX1+DlUOmINiNtp8G2CH1si2AFWpfS21Ehy8="
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span class="music-index">02</span>
+            <div>
+              <h4 data-i18n="musicDangerousSugarTitle">危险糖衣</h4>
+              <p data-i18n="musicDangerousSugarMeta">为禁毒宣传所作</p>
+            </div>
+            <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
+          </a>
 
-            <a class="illustration-card illustration-card-wide" href="works/no-escape.html">
-              <img src="assets/no-escape.png" alt="「无处可逃」" />
-              <div>
-                <h4>「无处可逃」</h4>
-              </div>
-            </a>
+          <a
+            class="music-item"
+            href="https://music.163.com/song?id=1973417078&amp;uct2=U2FsdGVkX1/84NIboWzxRkrPZ6quiNlnYW3wiSoNUf0="
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span class="music-index">03</span>
+            <div>
+              <h4 data-i18n="musicExistenceTitle">Existence</h4>
+              <p data-i18n="musicExistenceMeta">原创音乐作品</p>
+            </div>
+            <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
+          </a>
 
-            <a class="illustration-card illustration-card-wide" href="works/x-2072789771831947478.html">
-              <img src="assets/x-2072789771831947478.png" alt="薪火燃尽之后，周围的一切也将燃烧" />
-              <div>
-                <h4>薪火燃尽之后，周围的一切也将燃烧</h4>
-              </div>
-            </a>
+          <a
+            class="music-item"
+            href="https://music.163.com/song?id=1939350742&amp;uct2=U2FsdGVkX182zsPxAMvysIm/hq2tuWXIh0nwSFsv1FE="
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span class="music-index">04</span>
+            <div>
+              <h4 data-i18n="musicShanghaiAliceTitle">明治十七年上海爱丽丝舞曲</h4>
+              <p data-i18n="musicShanghaiAliceMeta">東方Project 同人曲</p>
+            </div>
+            <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
+          </a>
 
-            <a class="illustration-card" href="works/x-2070451969228222662.html">
-              <img src="assets/x-2070451969228222662.jpg" alt="𝑯𝒂𝒑𝒑𝒚 𝒃𝒊𝒓𝒕𝒉𝒅𝒂𝒚 𝑼𝒊𝒌𝒂" />
-              <div>
-                <h4>𝑯𝒂𝒑𝒑𝒚 𝒃𝒊𝒓𝒕𝒉𝒅𝒂𝒚 𝑼𝒊𝒌𝒂</h4>
-              </div>
-            </a>
+          <a
+            class="music-item"
+            href="https://music.163.com/song?id=1939690181&amp;uct2=U2FsdGVkX18o2dPm3ZRzFQTbyOCmKaeMZvVVn6AvLqA="
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span class="music-index">05</span>
+            <div>
+              <h4 data-i18n="musicFloweringNightTitle">Flowering night No.11 I.Walts</h4>
+              <p data-i18n="musicFloweringNightMeta">東方Project 同人曲</p>
+            </div>
+            <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
+          </a>
 
-            <a class="illustration-card" href="works/reconstructed-monet-spring.html">
-              <img src="assets/reconstructed-monet-spring.png" alt="「重构莫奈」春天 - BanG Dream 同人作品" />
-              <div>
-                <h4 data-i18n="illustMonetSpringTitle">「重构莫奈」春天</h4>
-                <p data-i18n="illustMonetSpringQuote">BanG Dream 同人作品</p>
-              </div>
-            </a>
+          <a
+            class="music-item"
+            href="https://music.163.com/song?id=1919472964&amp;uct2=U2FsdGVkX1/qCrBQDgq5+xn7b+sHGb4WPWjiu0iWSf8="
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span class="music-index">06</span>
+            <div>
+              <h4 data-i18n="musicInheritanceTitle">继承之歌</h4>
+              <p data-i18n="musicInheritanceMeta">动画《无职转生》第一季 OP2 弦乐改编</p>
+            </div>
+            <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
+          </a>
 
-            <a class="illustration-card" href="works/reconstructed-monet-woman-with-parasol.html">
-              <img src="assets/reconstructed-monet-woman-with-parasol.png" alt="「重构莫奈」撑阳伞的女人 - BanG Dream 同人作品" />
-              <div>
-                <h4 data-i18n="illustMonetParasolTitle">「重构莫奈」撑阳伞的女人</h4>
-                <p data-i18n="illustMonetParasolQuote">BanG Dream 同人作品</p>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/withered-willow-blooms.html">
-              <img src="assets/withered-willow-blooms.png" alt="枯杨生华，何可久也 - BanG Dream 同人作品" />
-              <div>
-                <h4 data-i18n="illustWillowTitle">枯杨生华，何可久也</h4>
-                <p data-i18n="illustWillowQuote">知是行之始，行是知之成</p>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/yutenji-nyamu-cloisonne.html">
-              <img src="assets/yutenji-nyamu-cloisonne.jpg" alt="Yutenji Nyamu - Created for Cloisonne Enamel Art -" />
-              <div>
-                <h4>Yutenji Nyamu</h4>
-                <p>- Created for Cloisonne Enamel Art -</p>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/wakaba-mutsumi-cloisonne.html">
-              <img src="assets/wakaba-mutsumi-cloisonne.jpg" alt="Wakaba Mutsumi - Created for Cloisonne Enamel Art -" />
-              <div>
-                <h4>Wakaba Mutsumi</h4>
-                <p>- Created for Cloisonne Enamel Art -</p>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2061470013433991319.html">
-              <img src="assets/x-2061470013433991319.jpg" alt="Misumi Uika - Created for Cloisonné Enamel Art -" />
-              <div>
-                <h4>Misumi Uika</h4>
-                <p>- Created for Cloisonné Enamel Art -</p>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2061152975654166866.html">
-              <img src="assets/x-2061152975654166866.jpg" alt="Nyamu，Happy Birthday！！" />
-              <div>
-                <h4>Nyamu，Happy Birthday！！</h4>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/wind-rises-sakiko.html">
-              <img src="assets/wind-rises-sakiko.jpg" alt="风起" />
-              <div>
-                <h4>风起</h4>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2060019397708881939.html">
-              <img src="assets/x-2060019397708881939.jpg" alt="花火" />
-              <div>
-                <h4>花火</h4>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2059319856739270909.html">
-              <img src="assets/x-2059319856739270909.jpg" alt="祝长崎素世小姐生日快乐🎉🎉 HAPPY BIRTHDAY !!!" />
-              <div>
-                <h4>祝长崎素世小姐生日快乐🎉🎉 HAPPY BIRTHDAY !!!</h4>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2059261682527150422.html">
-              <img src="assets/x-2059261682527150422.jpg" alt="夏天" />
-              <div>
-                <h4>夏天</h4>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2058626969240314090.html">
-              <img src="assets/x-2058626969240314090.jpg" alt="“Das Ewig-Weibliche zieht uns hinan.” - 永恒的女性，引导我们上升 - — Johann Wolfgang von Goethe, Faust" />
-              <div>
-                <h4>“Das Ewig-Weibliche zieht uns hinan.”</h4>
-                <p>- 永恒的女性，引导我们上升 -</p>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2058201419132604498.html">
-              <img src="assets/x-2058201419132604498.jpg" alt="“Wer immer strebend sich bemüht, Den können wir erlösen.” -凡是不断奋进追求之人， 我们终能将其救赎 - — Johann Wolfgang von Goethe, 《Faust》, &quot;Chorus Mysticus&quot;" />
-              <div>
-                <h4>“Wer immer strebend sich bemüht, Den können wir erlösen.”</h4>
-                <p>-凡是不断奋进追求之人， 我们终能将其救赎 -</p>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2057842133000991184.html">
-              <img src="assets/x-2057842133000991184.jpg" alt="&quot; Das Unzulängliche, Hier wird’s Ereignis; Das Unbeschreibliche, Hier ist’s getan &quot; - 那不完满者，在此成为实现； 那不可言说者，在此已然完成 - — Johann Wolfgang von Goethe, 《Faust》, &quot;Chorus Mysticus&quot;" />
-              <div>
-                <h4>&quot;Das Unzulängliche, Hier wird’s Ereignis; Das Unbeschreibliche, Hier ist’s getan&quot;</h4>
-                <p>那不完满者，在此成为实现；<br />那不可言说者，在此已然完成</p>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2057480484020715526.html">
-              <img src="assets/x-2057480484020715526.jpg" alt="“Grau, teurer Freund, ist alle Theorie, Und grün des Lebens goldner Baum.” - 灰色的，亲爱的朋友，是一切理论； 而生命的金树常青 - — Faust, Faust I, Studierzimmer —" />
-              <div>
-                <h4>“Grau, teurer Freund, ist alle Theorie, Und grün des Lebens goldner Baum.”</h4>
-                <p>- 灰色的，亲爱的朋友，是一切理论；</p>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2057287258450149525.html">
-              <img src="assets/x-2057287258450149525.jpg" alt="“Alles Vergängliche Ist nur ein Gleichnis.” - 一切短暂之物，都不过是象征 - — Johann Wolfgang von Goethe, Faust II, Chorus Mysticus" />
-              <div>
-                <h4>“Alles Vergängliche Ist nur ein Gleichnis.”</h4>
-                <p>- 一切短暂之物，都不过是象征 -</p>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2056950852011896979.html">
-              <img src="assets/x-2056950852011896979.jpg" alt="“Zwei Seelen wohnen, ach! in meiner Brust.” -我的胸中啊，栖息着两个灵魂 - — Johann Wolfgang von Goethe, Faust I, “Nacht”" />
-              <div>
-                <h4>“Zwei Seelen wohnen, ach! in meiner Brust.”</h4>
-                <p>-我的胸中啊，栖息着两个灵魂 -</p>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2056244344651460896.html">
-              <img src="assets/x-2056244344651460896.jpg" alt="“L&#x27;amor che move il sole e l&#x27;altre stelle.” -那推动太阳与群星运行的爱 - — Dante Alighieri, Paradiso, Canto XXXIII" />
-              <div>
-                <h4>“L&#x27;amor che move il sole e l&#x27;altre stelle.”</h4>
-                <p>-那推动太阳与群星运行的爱 -</p>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2055901240295559406.html">
-              <img src="assets/x-2055901240295559406.jpg" alt="Soyo" />
-              <div>
-                <h4>Soyo</h4>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2055578801359450379.html">
-              <img src="assets/x-2055578801359450379.jpg" alt="“Dentro da sé, del suo colore stesso, mi parve pinta de la nostra effige.” -在那自身的光辉之中，我仿佛看见了我们自身的形象 - — Dante Alighieri, Paradiso, Canto XXXIII" />
-              <div>
-                <h4>“Dentro da sé, del suo colore stesso, mi parve pinta de la nostra effige.”</h4>
-                <p>-在那自身的光辉之中，我仿佛看见了我们自身的形象 -</p>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2054921513929957618.html">
-              <img src="assets/x-2054921513929957618.jpg" alt="“La gloria di colui che tutto move per l&#x27;universo penetra, e risplende.” -那推动万物者的荣光，穿透宇宙而闪耀- — Dante Alighieri, Paradiso, Canto I" />
-              <div>
-                <h4>“La gloria di colui che tutto move per l&#x27;universo penetra, e risplende.”</h4>
-                <p>-那推动万物者的荣光，穿透宇宙而闪耀-</p>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2054839893717905795.html">
-              <img src="assets/x-2054839893717905795.jpg" alt="“Libertà va cercando, ch&#x27;è sì cara.” -他正追寻那如此珍贵的自由- — Dante Alighieri, Purgatorio, Canto I" />
-              <div>
-                <h4>“Libertà va cercando, ch&#x27;è sì cara.”</h4>
-                <p>-他正追寻那如此珍贵的自由-</p>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2054593127886016884.html">
-              <img src="assets/x-2054593127886016884.jpg" alt="“Lasciate ogne speranza, voi ch&#x27;intrate.” -进入此地者，放弃一切希望- — Dante Alighieri, Inferno, Canto III" />
-              <div>
-                <h4>“Lasciate ogne speranza, voi ch&#x27;intrate.”</h4>
-                <p>-进入此地者，放弃一切希望-</p>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2054536223646236813.html">
-              <img src="assets/x-2054536223646236813.jpg" alt="“Nessun maggior dolore che ricordarsi del tempo felice ne la miseria.” - 在悲惨之中，再没有比回忆幸福的时刻更大痛苦- — Dante Alighieri, Inferno, Canto V" />
-              <div>
-                <h4>“Nessun maggior dolore che ricordarsi del tempo felice ne la miseria.”</h4>
-                <p>- 在悲惨之中，再没有比回忆幸福的时刻更大痛苦-</p>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2054157349368291656.html">
-              <img src="assets/x-2054157349368291656.jpg" alt="&quot;Dentro al foco innanzi mi si mise.&quot; -他先一步走入了火中- — Dante Alighieri, Purgatorio, Canto XXVII" />
-              <div>
-                <h4>&quot;Dentro al foco innanzi mi si mise.&quot;</h4>
-                <p>-他先一步走入了火中-</p>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2053792003666981234.html">
-              <img src="assets/x-2053792003666981234.jpg" alt="&quot;Amor condusse noi ad una morte.&quot;" />
-              <div>
-                <h4>&quot;Amor condusse noi ad una morte.&quot;</h4>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2053487746245902459.html">
-              <img src="assets/x-2053487746245902459.jpg" alt="圧を" />
-              <div>
-                <h4>圧を</h4>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2053137894811038060.html">
-              <img src="assets/x-2053137894811038060.jpg" alt="uika" />
-              <div>
-                <h4>uika</h4>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2053052897936736573.html">
-              <img src="assets/x-2053052897936736573.jpg" alt="Mortis" />
-              <div>
-                <h4>Mortis</h4>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2052783722446139541.html">
-              <img src="assets/x-2052783722446139541.jpg" alt="nya x mutsu" />
-              <div>
-                <h4>nya x mutsu</h4>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2052464190347198480.html">
-              <img src="assets/x-2052464190347198480.jpg" alt="taki x umi" />
-              <div>
-                <h4>taki x umi</h4>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2034057343651242233.html">
-              <img src="assets/x-2034057343651242233.jpg" alt="-チャイナドレス-" />
-              <div>
-                <h4>-チャイナドレス-</h4>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-2021134685011837300.html">
-              <img src="assets/x-2021134685011837300.jpg" alt="若叶睦" />
-              <div>
-                <h4>若叶睦</h4>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-1976336555582337393.html">
-              <img src="assets/x-1976336555582337393.jpg" alt="骑着马的少女" />
-              <div>
-                <h4>骑着马的少女</h4>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-1976335765643854083.html">
-              <img src="assets/x-1976335765643854083.jpg" alt="大漠" />
-              <div>
-                <h4>大漠</h4>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-1964201015579648102.html">
-              <img src="assets/x-1964201015579648102.jpg" alt="-时尚杂志封面-" />
-              <div>
-                <h4>-时尚杂志封面-</h4>
-              </div>
-            </a>
-
-            <a class="illustration-card" href="works/x-1928476592616939841.html">
-              <img src="assets/x-1928476592616939841.jpg" alt="「君が影 水面に見まもる、鏡のうへに 君し思ほゆ」" />
-              <div>
-                <h4>「君が影 水面に見まもる、鏡のうへに 君し思ほゆ」</h4>
-              </div>
-            </a>
-          </div>
+          <a
+            class="music-item"
+            href="https://music.163.com/song?id=1821217335&amp;uct2=U2FsdGVkX19ugkRh7gQtm8c64C2ysbq0BTsWtJzj62s="
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span class="music-index">07</span>
+            <div>
+              <h4 data-i18n="musicTravelerTitle">旅人之歌</h4>
+              <p data-i18n="musicTravelerMeta">动画《无职转生》第一季 OP1 弦乐改编</p>
+            </div>
+            <span class="music-meta" data-i18n="musicOpenLabel">打开作品</span>
+          </a>
         </div>
-            </section>
+      </div>
 
-            <section class="content-section split-section" id="skills">
-        <div class="section-heading">
+      <div class="works-block">
+        <div class="subsection-heading">
+          <h3 data-i18n="illustrationWorksTitle">插画作品</h3>
+          <p data-i18n="illustrationWorksIntro">按时间从新到旧排列。</p>
+        </div>
+
+        <div class="illustration-masonry">
+          <a class="illustration-card illustration-card-wide" href="works/rabbit-before-snake.html">
+            <img width="2560" height="1440" loading="lazy" decoding="async" src="assets/rabbit-before-snake.png" alt="「Like a rabbit before a snake.」" />
+            <div>
+              <h4>「Like a rabbit before a snake.」</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card illustration-card-wide" href="works/no-escape.html">
+            <img width="2560" height="1440" loading="lazy" decoding="async" src="assets/no-escape.png" alt="「无处可逃」" />
+            <div>
+              <h4>「无处可逃」</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card illustration-card-wide" href="works/x-2072789771831947478.html">
+            <img width="4096" height="1714" loading="lazy" decoding="async" src="assets/x-2072789771831947478.png" alt="薪火燃尽之后，周围的一切也将燃烧" />
+            <div>
+              <h4>薪火燃尽之后，周围的一切也将燃烧</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2070451969228222662.html">
+            <img width="1024" height="1536" loading="lazy" decoding="async" src="assets/x-2070451969228222662.jpg" alt="𝑯𝒂𝒑𝒑𝒚 𝒃𝒊𝒓𝒕𝒉𝒅𝒂𝒚 𝑼𝒊𝒌𝒂" />
+            <div>
+              <h4>𝑯𝒂𝒑𝒑𝒚 𝒃𝒊𝒓𝒕𝒉𝒅𝒂𝒚 𝑼𝒊𝒌𝒂</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/reconstructed-monet-spring.html">
+            <img width="1400" height="1400" loading="lazy" decoding="async" src="assets/reconstructed-monet-spring.png" alt="「重构莫奈」春天 - BanG Dream 同人作品" />
+            <div>
+              <h4 data-i18n="illustMonetSpringTitle">「重构莫奈」春天</h4>
+              <p data-i18n="illustMonetSpringQuote">BanG Dream 同人作品</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/reconstructed-monet-woman-with-parasol.html">
+            <img width="1400" height="1400" loading="lazy" decoding="async" src="assets/reconstructed-monet-woman-with-parasol.png" alt="「重构莫奈」撑阳伞的女人 - BanG Dream 同人作品" />
+            <div>
+              <h4 data-i18n="illustMonetParasolTitle">「重构莫奈」撑阳伞的女人</h4>
+              <p data-i18n="illustMonetParasolQuote">BanG Dream 同人作品</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/withered-willow-blooms.html">
+            <img width="736" height="1600" loading="lazy" decoding="async" src="assets/withered-willow-blooms.png" alt="枯杨生华，何可久也 - BanG Dream 同人作品" />
+            <div>
+              <h4 data-i18n="illustWillowTitle">枯杨生华，何可久也</h4>
+              <p data-i18n="illustWillowQuote">知是行之始，行是知之成</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/yutenji-nyamu-cloisonne.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/yutenji-nyamu-cloisonne.jpg" alt="Yutenji Nyamu - Created for Cloisonne Enamel Art -" />
+            <div>
+              <h4>Yutenji Nyamu</h4>
+              <p>- Created for Cloisonne Enamel Art -</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/wakaba-mutsumi-cloisonne.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/wakaba-mutsumi-cloisonne.jpg" alt="Wakaba Mutsumi - Created for Cloisonne Enamel Art -" />
+            <div>
+              <h4>Wakaba Mutsumi</h4>
+              <p>- Created for Cloisonne Enamel Art -</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2061470013433991319.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2061470013433991319.jpg" alt="Misumi Uika - Created for Cloisonné Enamel Art -" />
+            <div>
+              <h4>Misumi Uika</h4>
+              <p>- Created for Cloisonné Enamel Art -</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2061152975654166866.html">
+            <img width="1024" height="1536" loading="lazy" decoding="async" src="assets/x-2061152975654166866.jpg" alt="Nyamu，Happy Birthday！！" />
+            <div>
+              <h4>Nyamu，Happy Birthday！！</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/wind-rises-sakiko.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/wind-rises-sakiko.jpg" alt="风起" />
+            <div>
+              <h4>风起</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2060019397708881939.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2060019397708881939.jpg" alt="花火" />
+            <div>
+              <h4>花火</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2059319856739270909.html">
+            <img width="1024" height="1536" loading="lazy" decoding="async" src="assets/x-2059319856739270909.jpg" alt="祝长崎素世小姐生日快乐🎉🎉 HAPPY BIRTHDAY !!!" />
+            <div>
+              <h4>祝长崎素世小姐生日快乐🎉🎉 HAPPY BIRTHDAY !!!</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2059261682527150422.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2059261682527150422.jpg" alt="夏天" />
+            <div>
+              <h4>夏天</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2058626969240314090.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2058626969240314090.jpg" alt="“Das Ewig-Weibliche zieht uns hinan.” - 永恒的女性，引导我们上升 - — Johann Wolfgang von Goethe, Faust" />
+            <div>
+              <h4>“Das Ewig-Weibliche zieht uns hinan.”</h4>
+              <p>- 永恒的女性，引导我们上升 -</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2058201419132604498.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2058201419132604498.jpg" alt="“Wer immer strebend sich bemüht, Den können wir erlösen.” -凡是不断奋进追求之人， 我们终能将其救赎 - — Johann Wolfgang von Goethe, 《Faust》, &quot;Chorus Mysticus&quot;" />
+            <div>
+              <h4>“Wer immer strebend sich bemüht, Den können wir erlösen.”</h4>
+              <p>-凡是不断奋进追求之人， 我们终能将其救赎 -</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2057842133000991184.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2057842133000991184.jpg" alt="&quot; Das Unzulängliche, Hier wird’s Ereignis; Das Unbeschreibliche, Hier ist’s getan &quot; - 那不完满者，在此成为实现； 那不可言说者，在此已然完成 - — Johann Wolfgang von Goethe, 《Faust》, &quot;Chorus Mysticus&quot;" />
+            <div>
+              <h4>&quot;Das Unzulängliche, Hier wird’s Ereignis; Das Unbeschreibliche, Hier ist’s getan&quot;</h4>
+              <p>那不完满者，在此成为实现；<br />那不可言说者，在此已然完成</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2057480484020715526.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2057480484020715526.jpg" alt="“Grau, teurer Freund, ist alle Theorie, Und grün des Lebens goldner Baum.” - 灰色的，亲爱的朋友，是一切理论； 而生命的金树常青 - — Faust, Faust I, Studierzimmer —" />
+            <div>
+              <h4>“Grau, teurer Freund, ist alle Theorie, Und grün des Lebens goldner Baum.”</h4>
+              <p>- 灰色的，亲爱的朋友，是一切理论；</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2057287258450149525.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2057287258450149525.jpg" alt="“Alles Vergängliche Ist nur ein Gleichnis.” - 一切短暂之物，都不过是象征 - — Johann Wolfgang von Goethe, Faust II, Chorus Mysticus" />
+            <div>
+              <h4>“Alles Vergängliche Ist nur ein Gleichnis.”</h4>
+              <p>- 一切短暂之物，都不过是象征 -</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2056950852011896979.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2056950852011896979.jpg" alt="“Zwei Seelen wohnen, ach! in meiner Brust.” -我的胸中啊，栖息着两个灵魂 - — Johann Wolfgang von Goethe, Faust I, “Nacht”" />
+            <div>
+              <h4>“Zwei Seelen wohnen, ach! in meiner Brust.”</h4>
+              <p>-我的胸中啊，栖息着两个灵魂 -</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2056244344651460896.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2056244344651460896.jpg" alt="“L&#x27;amor che move il sole e l&#x27;altre stelle.” -那推动太阳与群星运行的爱 - — Dante Alighieri, Paradiso, Canto XXXIII" />
+            <div>
+              <h4>“L&#x27;amor che move il sole e l&#x27;altre stelle.”</h4>
+              <p>-那推动太阳与群星运行的爱 -</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2055901240295559406.html">
+            <img width="1122" height="1402" loading="lazy" decoding="async" src="assets/x-2055901240295559406.jpg" alt="Soyo" />
+            <div>
+              <h4>Soyo</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2055578801359450379.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2055578801359450379.jpg" alt="“Dentro da sé, del suo colore stesso, mi parve pinta de la nostra effige.” -在那自身的光辉之中，我仿佛看见了我们自身的形象 - — Dante Alighieri, Paradiso, Canto XXXIII" />
+            <div>
+              <h4>“Dentro da sé, del suo colore stesso, mi parve pinta de la nostra effige.”</h4>
+              <p>-在那自身的光辉之中，我仿佛看见了我们自身的形象 -</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2054921513929957618.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2054921513929957618.jpg" alt="“La gloria di colui che tutto move per l&#x27;universo penetra, e risplende.” -那推动万物者的荣光，穿透宇宙而闪耀- — Dante Alighieri, Paradiso, Canto I" />
+            <div>
+              <h4>“La gloria di colui che tutto move per l&#x27;universo penetra, e risplende.”</h4>
+              <p>-那推动万物者的荣光，穿透宇宙而闪耀-</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2054839893717905795.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2054839893717905795.jpg" alt="“Libertà va cercando, ch&#x27;è sì cara.” -他正追寻那如此珍贵的自由- — Dante Alighieri, Purgatorio, Canto I" />
+            <div>
+              <h4>“Libertà va cercando, ch&#x27;è sì cara.”</h4>
+              <p>-他正追寻那如此珍贵的自由-</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2054593127886016884.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2054593127886016884.jpg" alt="“Lasciate ogne speranza, voi ch&#x27;intrate.” -进入此地者，放弃一切希望- — Dante Alighieri, Inferno, Canto III" />
+            <div>
+              <h4>“Lasciate ogne speranza, voi ch&#x27;intrate.”</h4>
+              <p>-进入此地者，放弃一切希望-</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2054536223646236813.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2054536223646236813.jpg" alt="“Nessun maggior dolore che ricordarsi del tempo felice ne la miseria.” - 在悲惨之中，再没有比回忆幸福的时刻更大痛苦- — Dante Alighieri, Inferno, Canto V" />
+            <div>
+              <h4>“Nessun maggior dolore che ricordarsi del tempo felice ne la miseria.”</h4>
+              <p>- 在悲惨之中，再没有比回忆幸福的时刻更大痛苦-</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2054157349368291656.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2054157349368291656.jpg" alt="&quot;Dentro al foco innanzi mi si mise.&quot; -他先一步走入了火中- — Dante Alighieri, Purgatorio, Canto XXVII" />
+            <div>
+              <h4>&quot;Dentro al foco innanzi mi si mise.&quot;</h4>
+              <p>-他先一步走入了火中-</p>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2053792003666981234.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2053792003666981234.jpg" alt="&quot;Amor condusse noi ad una morte.&quot;" />
+            <div>
+              <h4>&quot;Amor condusse noi ad una morte.&quot;</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2053487746245902459.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2053487746245902459.jpg" alt="圧を" />
+            <div>
+              <h4>圧を</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2053137894811038060.html">
+            <img width="1122" height="1402" loading="lazy" decoding="async" src="assets/x-2053137894811038060.jpg" alt="uika" />
+            <div>
+              <h4>uika</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2053052897936736573.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2053052897936736573.jpg" alt="Mortis" />
+            <div>
+              <h4>Mortis</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2052783722446139541.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2052783722446139541.jpg" alt="nya x mutsu" />
+            <div>
+              <h4>nya x mutsu</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2052464190347198480.html">
+            <img width="1254" height="1254" loading="lazy" decoding="async" src="assets/x-2052464190347198480.jpg" alt="taki x umi" />
+            <div>
+              <h4>taki x umi</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2034057343651242233.html">
+            <img width="1466" height="2048" loading="lazy" decoding="async" src="assets/x-2034057343651242233.jpg" alt="-チャイナドレス-" />
+            <div>
+              <h4>-チャイナドレス-</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-2021134685011837300.html">
+            <img width="1466" height="2048" loading="lazy" decoding="async" src="assets/x-2021134685011837300.jpg" alt="若叶睦" />
+            <div>
+              <h4>若叶睦</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-1976336555582337393.html">
+            <img width="744" height="1039" loading="lazy" decoding="async" src="assets/x-1976336555582337393.jpg" alt="骑着马的少女" />
+            <div>
+              <h4>骑着马的少女</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-1976335765643854083.html">
+            <img width="744" height="1039" loading="lazy" decoding="async" src="assets/x-1976335765643854083.jpg" alt="大漠" />
+            <div>
+              <h4>大漠</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-1964201015579648102.html">
+            <img width="1448" height="2048" loading="lazy" decoding="async" src="assets/x-1964201015579648102.jpg" alt="-时尚杂志封面-" />
+            <div>
+              <h4>-时尚杂志封面-</h4>
+            </div>
+          </a>
+
+          <a class="illustration-card" href="works/x-1928476592616939841.html">
+            <img width="1536" height="1152" loading="lazy" decoding="async" src="assets/x-1928476592616939841.jpg" alt="「君が影 水面に見まもる、鏡のうへに 君し思ほゆ」" />
+            <div>
+              <h4>「君が影 水面に見まもる、鏡のうへに 君し思ほゆ」</h4>
+            </div>
+          </a>
+        </div>
+      </div>
+      </section>
+
+      <section class="content-section split-section" id="skills">
+        <div class="section-head" data-reveal>
+          <span class="section-index" aria-hidden="true">04</span>
           <p class="eyebrow" data-i18n="skillsEyebrow">Skills</p>
           <h2 data-i18n="skillsTitle">技能与教育</h2>
+          <span class="section-rule" aria-hidden="true"></span>
         </div>
 
         <div class="skill-columns">
-          <div>
+          <div data-reveal>
             <h3 data-i18n="coreSkillsTitle">核心技能</h3>
             <div class="chips" aria-label="技能标签" data-i18n-aria="skillTagsAria">
               <span data-i18n="skillProjectManagement">项目管理</span>
@@ -734,7 +737,7 @@
             </div>
           </div>
 
-          <div>
+          <div data-reveal>
             <h3 data-i18n="educationTitle">教育背景</h3>
             <div class="education-list">
               <div class="education-item">
@@ -752,24 +755,31 @@
             </div>
           </div>
         </div>
-            </section>
+      </section>
 
-            <section class="contact-section" id="contact">
-        <div>
+      <section class="contact-section" id="contact" data-reveal>
+        <div class="supre supre-contact" aria-hidden="true">
+          <span class="shape c-square"></span>
+          <span class="shape c-bar"></span>
+          <span class="shape c-circle"></span>
+        </div>
+        <div class="contact-copy">
+          <span class="section-index" aria-hidden="true">05</span>
           <p class="eyebrow" data-i18n="contactEyebrow">Contact</p>
           <h2 data-i18n="contactTitle">联系我很简单</h2>
           <p><span data-i18n="contactIntro">请通过邮箱</span><strong>contact@yinyq.net</strong><span data-i18n="contactOutro">与我联系吧！</span></p>
         </div>
         <a class="primary-link" href="mailto:contact@yinyq.net" data-email="contact@yinyq.net" data-i18n="contactButton">发送邮件</a>
-            </section>
-          </section>
-          </div>
-        </div>
       </section>
     </main>
 
+    <footer class="site-footer" aria-hidden="true">
+      <span>YINYQ.NET</span>
+      <span class="footer-marks"><i></i><i></i><i></i></span>
+    </footer>
+
     <div class="toast" role="status" aria-live="polite" hidden></div>
 
-    <script src="script.js?v=20260706-top-reset"></script>
+    <script src="script.js?v=20261015-swiss"></script>
   </body>
 </html>

@@ -6,18 +6,6 @@ const audioButton = document.querySelector('[data-action="toggle-bgm"]');
 const bgmAudio = document.querySelector("#site-bgm");
 const bgmGuide = document.querySelector(".bgm-guide");
 const bgmPageGuide = document.querySelector(".bgm-page-guide");
-const sceneStageHashes = new Map([
-  ["#projects", 1],
-  ["#experience", 2],
-  ["#works", 3],
-  ["#skills", 3],
-  ["#contact", 3],
-]);
-const scenePanelCount = 4;
-const sceneWheelGestureMs = 680;
-const portfolioEntryGuardMs = 1150;
-let sceneWheelHandledUntil = 0;
-let portfolioEntryGuardUntil = 0;
 const hasTranslation = (dictionary, key) => Object.prototype.hasOwnProperty.call(dictionary, key);
 const i18n = {
   zh: {
@@ -418,7 +406,23 @@ const i18n = {
   },
 };
 
-const storedTheme = localStorage.getItem("resume-theme");
+function readStorage(key) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorage(key, value) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Storage can be blocked (private mode, site data disabled); preferences then last for this visit only.
+  }
+}
+
+const storedTheme = readStorage("resume-theme");
 const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 let currentLanguage = "zh";
 let illustrationLayoutFrame = 0;
@@ -469,7 +473,7 @@ function applyLanguage(language) {
     button.setAttribute("aria-pressed", String(isActive));
   });
 
-  localStorage.setItem("resume-language", currentLanguage);
+  writeStorage("resume-language", currentLanguage);
   updateLocalTime();
   updateAudioButtonState();
   queueBgmGuideLayout();
@@ -499,7 +503,7 @@ async function copyEmail() {
 function toggleTheme() {
   const nextTheme = root.dataset.theme === "dark" ? "light" : "dark";
   root.dataset.theme = nextTheme;
-  localStorage.setItem("resume-theme", nextTheme);
+  writeStorage("resume-theme", nextTheme);
 }
 
 function closeToolbox() {
@@ -543,6 +547,7 @@ function updateAudioButtonState() {
   audioButton.setAttribute("aria-pressed", String(bgmStarted && !isMuted));
   audioButton.setAttribute("aria-label", label);
   audioButton.title = label;
+  root.classList.toggle("bgm-live", bgmStarted && !bgmAudio.muted && !bgmAudio.paused);
   queueBgmGuideLayout();
 }
 
@@ -745,255 +750,93 @@ function setupBgmGuide() {
   scheduleBgmGuideBounce();
 }
 
-function getSceneStageScrollTop(stageIndex) {
-  const introSwitch = document.querySelector(".intro-switch");
-  if (!introSwitch) return null;
+function setupScrollState() {
+  const hero = document.querySelector(".hero");
+  let frame = 0;
 
-  const stickyHeight = Math.max(1, window.innerHeight - 72);
-  const start = introSwitch.offsetTop - 72;
-  const distance = Math.max(1, introSwitch.offsetHeight - stickyHeight);
-  const progress = stageIndex / Math.max(1, scenePanelCount - 1);
-  return start + distance * progress;
-}
+  const update = () => {
+    frame = 0;
+    const scrollY = window.scrollY;
+    const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    const heroHeight = Math.max(1, hero?.offsetHeight || window.innerHeight);
 
-function getSceneSnapPoints() {
-  const introSwitch = document.querySelector(".intro-switch");
-  if (!introSwitch) return [];
+    root.style.setProperty("--progress", clampNumber(scrollY / maxScroll, 0, 1).toFixed(4));
+    root.style.setProperty("--hero-p", clampNumber(scrollY / heroHeight, 0, 1).toFixed(4));
+    root.classList.toggle("is-scrolled", scrollY > 8);
 
-  return Array.from({ length: scenePanelCount }, (_, index) => getSceneStageScrollTop(index))
-    .filter((point) => point !== null)
-    .map((point) => Math.max(0, Math.round(point)));
-}
-
-function scrollToSceneStage(stageIndex, behavior = "smooth") {
-  const top = getSceneStageScrollTop(stageIndex);
-  if (top === null) return false;
-
-  window.scrollTo({
-    top,
-    behavior: motionQuery.matches ? "auto" : behavior,
-  });
-  return true;
-}
-
-function scrollToScenePoint(top, behavior = "smooth") {
-  window.scrollTo({
-    top: Math.max(0, top),
-    behavior: motionQuery.matches ? "auto" : behavior,
-  });
-}
-
-function scrollPortfolioTarget(hash, behavior = "smooth") {
-  const portfolioPage = document.querySelector(".portfolio-page");
-  const target = hash ? document.querySelector(hash) : null;
-
-  if (!portfolioPage || !target || !portfolioPage.contains(target)) return;
-
-  const top = Math.max(0, target.offsetTop - portfolioPage.offsetTop);
-  portfolioPage.scrollTo({
-    top,
-    behavior: motionQuery.matches ? "auto" : behavior,
-  });
-}
-
-function setupHomeMotion() {
-  const introSwitch = document.querySelector(".intro-switch");
-  const sceneTrack = document.querySelector(".scene-track");
-  const projectsSection = document.querySelector("#projects");
-  const experienceSection = document.querySelector("#experience");
-  const portfolioPage = document.querySelector(".portfolio-page");
-  const wideQuery = window.matchMedia("(min-width: 861px)");
-
-  const resetStage = () => {
-    root.style.setProperty("--scene-x", "0vw");
-    root.style.setProperty("--home-opacity", "1");
-    root.style.setProperty("--home-blur", "0px");
-    root.style.setProperty("--project-opacity", wideQuery.matches ? "0.1" : "1");
-    root.style.setProperty("--project-blur", wideQuery.matches ? "3px" : "0px");
-    root.style.setProperty("--experience-opacity", wideQuery.matches ? "0.1" : "1");
-    root.style.setProperty("--experience-blur", wideQuery.matches ? "3px" : "0px");
-    root.style.setProperty("--portfolio-opacity", wideQuery.matches ? "0.1" : "1");
-    root.style.setProperty("--portfolio-blur", wideQuery.matches ? "3px" : "0px");
-  };
-  const resetPortfolioPageTop = () => {
-    portfolioPage?.scrollTo({
-      top: 0,
-      behavior: "auto",
-    });
+    if (scrollY > window.innerHeight * 0.5 && bgmPageGuideShown && !bgmPageGuideDismissed) {
+      dismissBgmPageGuide();
+    }
   };
 
-  if (motionQuery.matches || !introSwitch || !sceneTrack) {
-    root.classList.add("is-ready");
-    projectsSection?.classList.add("is-visible");
-    experienceSection?.classList.add("is-visible");
-    portfolioPage?.classList.add("is-visible");
-    resetStage();
+  const queue = () => {
+    if (!frame) {
+      frame = window.requestAnimationFrame(update);
+    }
+  };
+
+  window.addEventListener("scroll", queue, { passive: true });
+  window.addEventListener("resize", queue);
+  update();
+
+  // Re-anchor deep links (e.g. /#contact) once the masonry has settled.
+  window.addEventListener("load", () => {
+    const target = window.location.hash ? document.getElementById(decodeURIComponent(window.location.hash.slice(1))) : null;
+    window.requestAnimationFrame(() => target?.scrollIntoView({ behavior: "auto" }));
+  });
+}
+
+function setupReveal() {
+  const targets = document.querySelectorAll("[data-reveal], .music-item, .illustration-card");
+
+  if (!root.classList.contains("motion") || !("IntersectionObserver" in window)) {
+    targets.forEach((node) => node.classList.add("is-inview"));
     return;
   }
 
-  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
-  const easeOutCubic = (value) => 1 - Math.pow(1 - value, 3);
-  const getDominantWheelDelta = (event) => {
-    const rawDelta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
-    const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
-    return rawDelta * unit;
-  };
-  const handleSceneWheel = (event) => {
-    if (!wideQuery.matches || event.ctrlKey) return;
+  const observer = new IntersectionObserver(
+    (entries) => {
+      let order = 0;
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
 
-    const snapPoints = getSceneSnapPoints();
-    if (snapPoints.length < 2) return;
+        entry.target.style.setProperty("--reveal-delay", `${Math.min(order, 6) * 70}ms`);
+        entry.target.classList.add("is-inview");
+        observer.unobserve(entry.target);
+        order += 1;
+      });
+    },
+    { rootMargin: "0px 0px -8% 0px", threshold: 0.12 },
+  );
 
-    const currentY = window.scrollY;
-    const firstPoint = snapPoints[0];
-    const lastPoint = snapPoints[snapPoints.length - 1];
-    const delta = getDominantWheelDelta(event);
-    const direction = Math.sign(delta);
+  targets.forEach((node) => observer.observe(node));
+}
 
-    if (!direction) return;
+function setupScrollSpy() {
+  const links = new Map(
+    [...document.querySelectorAll('.nav a[href^="#"]')].map((link) => [link.getAttribute("href").slice(1), link]),
+  );
+  const sections = [...links.keys()].map((id) => document.getElementById(id)).filter(Boolean);
+  if (!sections.length || !("IntersectionObserver" in window)) return;
 
-    const currentIndex = snapPoints.reduce((nearestIndex, point, index) => {
-      const nearestDistance = Math.abs(currentY - snapPoints[nearestIndex]);
-      const distance = Math.abs(currentY - point);
-      return distance < nearestDistance ? index : nearestIndex;
-    }, 0);
-    const isPortfolioStage = currentIndex === scenePanelCount - 1;
-    const portfolioWheelTarget = event.target.closest?.(".portfolio-page");
-
-    const boundaryPad = 18;
-    const inSnapRange =
-      currentY >= firstPoint - boundaryPad &&
-      currentY <= lastPoint + boundaryPad &&
-      !(currentY <= firstPoint + boundaryPad && direction < 0) &&
-      !(currentY >= lastPoint - boundaryPad && direction > 0 && !(isPortfolioStage && portfolioWheelTarget));
-
-    if (!inSnapRange) return;
-
-    const now = performance.now();
-
-    if (isPortfolioStage && portfolioPage && portfolioWheelTarget) {
-      if (direction > 0 && now < portfolioEntryGuardUntil) {
-        event.preventDefault();
-        return;
-      }
-
-      const canScrollDown = portfolioPage.scrollTop + portfolioPage.clientHeight < portfolioPage.scrollHeight - 2;
-      const canScrollUp = portfolioPage.scrollTop > 2;
-
-      if ((direction > 0 && canScrollDown) || (direction < 0 && canScrollUp)) {
-        return;
-      }
-    }
-
-    event.preventDefault();
-
-    if (now < sceneWheelHandledUntil) {
-      return;
-    }
-
-    sceneWheelHandledUntil = now + sceneWheelGestureMs;
-    const nextIndex = clamp(currentIndex + direction, 0, snapPoints.length - 1);
-
-    if (nextIndex === scenePanelCount - 1 && currentIndex < nextIndex) {
-      portfolioEntryGuardUntil = now + portfolioEntryGuardMs;
-      resetPortfolioPageTop();
-      window.setTimeout(resetPortfolioPageTop, 520);
-    }
-
-    scrollToScenePoint(snapPoints[nextIndex]);
-  };
-
-  const updateStage = () => {
-    if (!wideQuery.matches) {
-      root.classList.remove("home-exiting");
-      root.classList.remove("projects-exiting");
-      root.classList.remove("experience-exiting");
-      projectsSection?.classList.add("is-visible");
-      experienceSection?.classList.add("is-visible");
-      portfolioPage?.classList.add("is-visible");
-      resetStage();
-      return;
-    }
-
-    const stickyHeight = Math.max(1, window.innerHeight - 72);
-    const start = introSwitch.offsetTop - 72;
-    const distance = Math.max(1, introSwitch.offsetHeight - stickyHeight);
-    const progress = clamp((window.scrollY - start) / distance, 0, 1);
-    const pageProgress = progress * (scenePanelCount - 1);
-    const firstTransition = clamp(pageProgress, 0, 1);
-    const secondTransition = clamp(pageProgress - 1, 0, 1);
-    const thirdTransition = clamp(pageProgress - 2, 0, 1);
-    const firstEase = easeOutCubic(firstTransition);
-    const secondEase = easeOutCubic(secondTransition);
-    const thirdEase = easeOutCubic(thirdTransition);
-    const scenePosition = firstEase + secondEase + thirdEase;
-
-    const projectOpacity =
-      pageProgress <= 1 ? Math.min(1, 0.1 + firstTransition * 1.2) : Math.max(0, 1 - secondTransition * 1.15);
-    const projectBlur = pageProgress <= 1 ? 3 * (1 - firstEase) : 2 * secondEase;
-    const experienceOpacity =
-      pageProgress <= 1
-        ? 0.1
-        : pageProgress <= 2
-          ? Math.min(1, 0.1 + secondTransition * 1.2)
-          : Math.max(0, 1 - thirdTransition * 1.15);
-    const experienceBlur = pageProgress <= 1 ? 3 : pageProgress <= 2 ? 3 * (1 - secondEase) : 2 * thirdEase;
-    const portfolioOpacity = Math.min(1, 0.1 + thirdTransition * 1.2);
-    const portfolioBlur = 3 * (1 - thirdEase);
-
-    root.style.setProperty("--scene-x", `${(-100 * scenePosition).toFixed(2)}vw`);
-    root.style.setProperty("--home-opacity", Math.max(0, 1 - firstTransition * 1.15).toFixed(3));
-    root.style.setProperty("--home-blur", `${(2 * firstEase).toFixed(2)}px`);
-    root.style.setProperty("--project-opacity", projectOpacity.toFixed(3));
-    root.style.setProperty("--project-blur", `${projectBlur.toFixed(2)}px`);
-    root.style.setProperty("--experience-opacity", experienceOpacity.toFixed(3));
-    root.style.setProperty("--experience-blur", `${experienceBlur.toFixed(2)}px`);
-    root.style.setProperty("--portfolio-opacity", portfolioOpacity.toFixed(3));
-    root.style.setProperty("--portfolio-blur", `${portfolioBlur.toFixed(2)}px`);
-    root.classList.toggle("home-exiting", firstTransition > 0.02);
-    root.classList.toggle("projects-exiting", secondTransition > 0.02);
-    root.classList.toggle("experience-exiting", thirdTransition > 0.02);
-    projectsSection?.classList.toggle("is-visible", firstTransition > 0.02 && secondTransition < 0.98);
-    experienceSection?.classList.toggle("is-visible", secondTransition > 0.02 && thirdTransition < 0.98);
-    portfolioPage?.classList.toggle("is-visible", thirdTransition > 0.02);
-
-    if (firstTransition > 0.02) {
-      root.classList.add("projects-entered");
-    }
-
-    if (firstTransition >= 0.98 && bgmPageGuideShown && !bgmPageGuideDismissed) {
-      dismissBgmPageGuide();
-    }
-
-    if (secondTransition > 0.02) {
-      root.classList.add("experience-entered");
-    }
-
-    if (thirdTransition > 0.02) {
-      root.classList.add("portfolio-entered");
-    }
-  };
-
-  resetStage();
-  updateStage();
-  window.addEventListener("scroll", updateStage, { passive: true });
-  window.addEventListener("resize", updateStage);
-  window.addEventListener("wheel", handleSceneWheel, { passive: false });
-
-  window.setTimeout(() => {
-    window.requestAnimationFrame(() => {
-      root.classList.add("is-ready");
-      updateStage();
-
-      const initialStage = sceneStageHashes.get(window.location.hash);
-      if (initialStage) {
-        scrollToSceneStage(initialStage, "auto");
-        if (initialStage === scenePanelCount - 1) {
-          scrollPortfolioTarget(window.location.hash, "auto");
+  const visible = new Set();
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          visible.add(entry.target.id);
+        } else {
+          visible.delete(entry.target.id);
         }
-      }
-    });
-  }, 160);
+      });
+
+      const current = sections.find((section) => visible.has(section.id))?.id;
+      links.forEach((link, id) => link.classList.toggle("is-current", id === current));
+    },
+    { rootMargin: "-45% 0px -50% 0px" },
+  );
+
+  sections.forEach((section) => observer.observe(section));
 }
 
 function layoutIllustrationMasonry() {
@@ -1077,28 +920,6 @@ function setupLocalTime() {
 }
 
 document.addEventListener("click", (event) => {
-  const anchor = event.target.closest("a[href]");
-  const href = anchor?.getAttribute("href");
-  const stageIndex = href ? sceneStageHashes.get(href) : null;
-  if (href === "#top" && window.matchMedia("(min-width: 861px)").matches && !motionQuery.matches) {
-    event.preventDefault();
-    window.history.pushState(null, "", "#top");
-    root.style.setProperty("--scene-x", "0vw");
-    document.querySelector(".portfolio-page")?.scrollTo({ top: 0, behavior: "auto" });
-    scrollToSceneStage(0);
-    return;
-  }
-
-  if (stageIndex && window.matchMedia("(min-width: 861px)").matches && !motionQuery.matches) {
-    event.preventDefault();
-    window.history.pushState(null, "", href);
-    scrollToSceneStage(stageIndex);
-    if (stageIndex === scenePanelCount - 1) {
-      window.setTimeout(() => scrollPortfolioTarget(href), 420);
-    }
-    return;
-  }
-
   const languageButton = event.target.closest("[data-lang]");
   if (languageButton) {
     applyLanguage(languageButton.dataset.lang);
@@ -1142,8 +963,10 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-applyLanguage(localStorage.getItem("resume-language") || "zh");
-setupHomeMotion();
+applyLanguage(readStorage("resume-language") || "zh");
+setupScrollState();
+setupReveal();
+setupScrollSpy();
 setupIllustrationMasonry();
 setupLocalTime();
 setupBgm();
