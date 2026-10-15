@@ -457,17 +457,21 @@ main {
   gap: 8px;
 }
 
+/* The platform icons are white glyphs, so tiles stay solid black in both
+   themes and turn red on hover. */
 .toolbox-links a {
   display: grid;
   place-items: center;
   aspect-ratio: 1;
   border: 1.5px solid var(--ink);
-  background: #fff;
-  transition: background 200ms ease, translate 200ms var(--ease-out);
+  background: #111;
+  transition: background 200ms ease, border-color 200ms ease, translate 200ms var(--ease-out);
 }
 
-.toolbox-links a:hover {
-  background: var(--yellow);
+.toolbox-links a:hover,
+.toolbox-links a:focus-visible {
+  border-color: var(--red);
+  background: var(--red);
   translate: 0 -3px;
 }
 
@@ -1833,6 +1837,13 @@ main {
   pointer-events: none;
   opacity: 0;
   animation: bgmGuideFade 320ms ease-out 420ms forwards;
+}
+
+/* display: block above would otherwise override the hidden attribute that
+   dismissBgmGuide() sets (visible with reduced motion, where the fade-out
+   animation is off). */
+.bgm-guide[hidden] {
+  display: none;
 }
 
 .bgm-guide-character-wrap {
