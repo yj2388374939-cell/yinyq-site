@@ -1074,7 +1074,10 @@ function planGallerySheet(ratios, width, heightBudget, gap) {
         if (ratios[k] < minRatio) minRatio = ratios[k];
       }
       const height = (width * shape.width - gap * (to - from - 1)) / ratioSum;
-      rows.push({ from, to, height, align: shape.align, imageRatioSum, minRatio });
+      // The last row carries the page block at its left end, so it always
+      // starts at the left edge: the block sits bottom-left on every page.
+      const align = to === n ? "start" : shape.align;
+      rows.push({ from, to, height, align, imageRatioSum, minRatio });
       total += height;
       from = to;
     }
@@ -1109,7 +1112,10 @@ function applyGallerySheet(sheet, ratios, plan, width, gap) {
     let used = gap * (row.to - row.from - 1);
     for (let i = row.from; i < row.to; i += 1) used += ratios[i] * height;
     let x = pad + (row.align === "end" ? width - used : 0);
-    for (let i = row.from; i < row.to; i += 1) {
+    const order = [];
+    for (let i = row.from; i < row.to; i += 1) order.push(i);
+    if (row.to === ratios.length) order.unshift(order.pop()); // page block leads the last row
+    for (const i of order) {
       const itemWidth = ratios[i] * height;
       Object.assign(items[i].style, {
         left: `${x.toFixed(1)}px`,
@@ -1122,6 +1128,36 @@ function applyGallerySheet(sheet, ratios, plan, width, gap) {
     y += height + gap;
   });
   sheet.style.height = `${Math.ceil(y - gap + pad)}px`;
+}
+
+// In-page reordering: a work may trade places with its neighbour (never move
+// further) when that gives a better composition. Each swap costs 3% of the
+// score, so the order stays as close to newest-first as the layout allows.
+const gallerySwapPenalty = 0.03;
+
+function arrangeGalleryPage(cardRatios, markRatio, width, heightBudget, gap) {
+  const n = cardRatios.length;
+  let best = null;
+  const order = [];
+  const visit = (i, swaps) => {
+    if (i >= n) {
+      const plan = planGallerySheet([...order.map((k) => cardRatios[k]), markRatio], width, heightBudget, gap);
+      if (!plan) return;
+      const score = plan.area * (1 - gallerySwapPenalty * swaps);
+      if (!best || score > best.score) best = { order: [...order], plan, score };
+      return;
+    }
+    order.push(i);
+    visit(i + 1, swaps);
+    order.pop();
+    if (i + 1 < n) {
+      order.push(i + 1, i);
+      visit(i + 2, swaps + 1);
+      order.length -= 2;
+    }
+  };
+  visit(0, 0);
+  return best;
 }
 
 // Splits the works (in order) into pages of 6–10 (the last may be shorter)
@@ -1264,8 +1300,13 @@ function setupGallery() {
 
     const pages = paginateGallery(cardRatios, markRatio, width, budget, gap);
     if (!pages) return;
+    pages.forEach((page) => {
+      const arranged = arrangeGalleryPage(cardRatios.slice(page.start, page.end), markRatio, width, budget, gap);
+      page.order = (arranged ? arranged.order : cardRatios.slice(page.start, page.end).map((_, k) => k)).map((k) => page.start + k);
+      page.plan = arranged ? arranged.plan : page.plan;
+    });
 
-    const key = pages.map((page) => page.end).join(",");
+    const key = pages.map((page) => page.order.join(".")).join("|");
     if (key !== pageKey) {
       pageKey = key;
       track.replaceChildren(...pages.map((page, index) => {
@@ -1273,7 +1314,7 @@ function setupGallery() {
         sheet.className = "gallery-sheet";
         sheet.setAttribute("role", "group");
         sheet.setAttribute("aria-label", `${index + 1} / ${pages.length}`);
-        sheet.append(...cards.slice(page.start, page.end));
+        sheet.append(...page.order.map((i) => cards[i]));
         const mark = document.createElement("div");
         mark.className = "sheet-mark";
         mark.setAttribute("aria-hidden", "true");
@@ -1289,7 +1330,7 @@ function setupGallery() {
     }
 
     pages.forEach((page, index) => {
-      const ratios = [...cardRatios.slice(page.start, page.end), markRatio];
+      const ratios = [...page.order.map((i) => cardRatios[i]), markRatio];
       applyGallerySheet(sheets[index], ratios, page.plan, width, gap);
     });
 
