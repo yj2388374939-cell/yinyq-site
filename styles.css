@@ -22,6 +22,10 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --hero-p: 0;
   --progress: 0;
+  /* Global strength of the idle drift on Suprematist shapes: translate is
+     scaled by --float-amp, rotation by --float-turn. */
+  --float-amp: 2.5;
+  --float-turn: 2;
   font-family:
     "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans", "Hiragino Kaku Gothic ProN",
     "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
@@ -2443,8 +2447,8 @@ main {
   }
 
   to {
-    translate: var(--fx, 0px) var(--fy, -8px);
-    rotate: var(--fr, 1deg);
+    translate: calc(var(--fx, 0px) * var(--float-amp)) calc(var(--fy, -8px) * var(--float-amp));
+    rotate: calc(var(--fr, 1deg) * var(--float-turn));
   }
 }
 
@@ -2454,7 +2458,7 @@ main {
   }
 
   to {
-    translate: 0 -14px;
+    translate: 0 -32px;
   }
 }
 
