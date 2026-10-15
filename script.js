@@ -1074,9 +1074,9 @@ function planGallerySheet(ratios, width, heightBudget, gap) {
         if (ratios[k] < minRatio) minRatio = ratios[k];
       }
       const height = (width * shape.width - gap * (to - from - 1)) / ratioSum;
-      // The last row carries the page block at its left end, so it always
-      // starts at the left edge: the block sits bottom-left on every page.
-      const align = to === n ? "start" : shape.align;
+      // The last row ends with the page block and is always right-aligned,
+      // so the block sits bottom-right on every page.
+      const align = to === n ? "end" : shape.align;
       rows.push({ from, to, height, align, imageRatioSum, minRatio });
       total += height;
       from = to;
@@ -1112,10 +1112,7 @@ function applyGallerySheet(sheet, ratios, plan, width, gap) {
     let used = gap * (row.to - row.from - 1);
     for (let i = row.from; i < row.to; i += 1) used += ratios[i] * height;
     let x = pad + (row.align === "end" ? width - used : 0);
-    const order = [];
-    for (let i = row.from; i < row.to; i += 1) order.push(i);
-    if (row.to === ratios.length) order.unshift(order.pop()); // page block leads the last row
-    for (const i of order) {
+    for (let i = row.from; i < row.to; i += 1) {
       const itemWidth = ratios[i] * height;
       Object.assign(items[i].style, {
         left: `${x.toFixed(1)}px`,
