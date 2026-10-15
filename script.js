@@ -850,14 +850,19 @@ function layoutIllustrationMasonry() {
 
   if (!rowHeight) return;
 
-  cards.forEach((card) => {
-    card.style.gridRowEnd = "";
+  // Cards are top-aligned, so their height doesn't depend on the current span:
+  // measure in place and only write spans that changed. Resetting every span
+  // first made the page height jump on each image load, which re-triggered
+  // scroll snapping.
+  const spans = cards.map((card) => {
+    const cardHeight = card.getBoundingClientRect().height;
+    return `span ${Math.max(1, Math.ceil((cardHeight + rowGap) / (rowHeight + rowGap)))}`;
   });
 
-  cards.forEach((card) => {
-    const cardHeight = card.getBoundingClientRect().height;
-    const span = Math.max(1, Math.ceil((cardHeight + rowGap) / (rowHeight + rowGap)));
-    card.style.gridRowEnd = `span ${span}`;
+  cards.forEach((card, index) => {
+    if (card.style.gridRowEnd !== spans[index]) {
+      card.style.gridRowEnd = spans[index];
+    }
   });
 }
 

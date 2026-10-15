@@ -51,17 +51,16 @@ html {
   scroll-snap-type: y proximity;
 }
 
-/* Snap points: the hero, every section heading, the two works sub-lists and
-   the contact block. */
-.hero,
-.section-head,
-.subsection-heading,
+/* Snap points: one per nav entry (项目 / 经历 / 作品 / 技能 / 联系), aligned to
+   each section's heading. The whole section is the snap area, so a section
+   taller than the viewport (Works) scrolls freely inside and only snaps at
+   its edges. */
+.content-section,
 .contact-section {
   scroll-snap-align: start;
 }
 
-.section-head,
-.subsection-heading {
+.content-section {
   scroll-margin-top: clamp(12px, 2.5vw, 36px);
 }
 
@@ -793,7 +792,7 @@ main {
 
 .content-section {
   position: relative;
-  padding: clamp(72px, 10vw, 150px) 0 0;
+  margin-top: clamp(72px, 10vw, 150px);
 }
 
 .section-head {
@@ -2484,6 +2483,7 @@ main {
   .hero,
   .content-section {
     min-height: auto;
+    margin: 0;
     padding: 20px 0;
   }
 
