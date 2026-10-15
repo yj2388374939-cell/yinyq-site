@@ -15,7 +15,7 @@
         document.documentElement.classList.add("motion");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=20261016-degrees" />
+    <link rel="stylesheet" href="styles.css?v=20261016-carousel" />
   </head>
   <body>
     <header class="site-header">
@@ -226,7 +226,21 @@
           </article>
 
           <article class="project-card" data-reveal>
-            <div class="project-media"><img width="744" height="1039" loading="lazy" decoding="async" src="assets/game-illustration.png" alt="游戏角色插画" /></div>
+            <div class="project-media project-carousel" data-carousel>
+              <div class="carousel-track" tabindex="0" role="region" aria-roledescription="carousel" aria-label="卡牌游戏图片" data-i18n-aria="cardGameGallery">
+                <img width="1920" height="1144" loading="lazy" decoding="async" src="assets/card-game-board.webp" alt="卡牌游戏对战界面截图" />
+                <img width="744" height="1039" loading="lazy" decoding="async" src="assets/game-illustration.png" alt="游戏角色插画" />
+              </div>
+              <div class="carousel-dots" aria-hidden="true"><i class="is-active"></i><i></i></div>
+              <div class="carousel-nav">
+                <button type="button" data-carousel-step="-1" aria-label="上一张" data-i18n-aria="carouselPrev">
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15 5 8 12l7 7" /></svg>
+                </button>
+                <button type="button" data-carousel-step="1" aria-label="下一张" data-i18n-aria="carouselNext">
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7" /></svg>
+                </button>
+              </div>
+            </div>
             <div class="project-body">
               <p class="project-tag"><span class="project-no">B</span>Card Game</p>
               <h3 data-i18n="cardGameTitle">卡牌游戏</h3>
@@ -957,6 +971,6 @@
 
     <div class="toast" role="status" aria-live="polite" hidden></div>
 
-    <script src="script.js?v=20261016-degrees"></script>
+    <script src="script.js?v=20261016-carousel"></script>
   </body>
 </html>

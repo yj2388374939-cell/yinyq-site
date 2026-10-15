@@ -1251,6 +1251,94 @@ main {
   transform: none;
 }
 
+/* Carousel inside a project card ------------------------------------------- */
+
+.carousel-track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
+.carousel-track:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: -2px;
+}
+
+.project-media .carousel-track img {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.carousel-dots {
+  position: absolute;
+  z-index: 2;
+  left: 10px;
+  bottom: 10px;
+  display: flex;
+  gap: 4px;
+  pointer-events: none;
+}
+
+.carousel-dots i {
+  display: block;
+  width: 14px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  transition: width 300ms var(--ease), background 300ms ease;
+}
+
+.carousel-dots i.is-active {
+  width: 28px;
+  background: var(--red);
+}
+
+.carousel-nav {
+  position: absolute;
+  z-index: 2;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  gap: 4px;
+}
+
+.carousel-nav button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+  transition: background 200ms ease;
+}
+
+.carousel-nav button:hover,
+.carousel-nav button:focus-visible {
+  background: var(--red);
+}
+
+.carousel-nav svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: square;
+}
+
 .project-body {
   display: grid;
   gap: 8px;

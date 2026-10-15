@@ -81,6 +81,9 @@ const i18n = {
     visualNovelDescription: "参与项目概念推进、视觉方向讨论与音乐氛围设计。",
     cardGameTitle: "卡牌游戏",
     cardGameDescription: "负责角色插画、视觉素材与声音气质的协同设计。",
+    cardGameGallery: "卡牌游戏图片",
+    carouselPrev: "上一张",
+    carouselNext: "下一张",
     metroidvaniaTitle: "类恶魔城游戏",
     metroidvaniaDescription: "进行游戏配乐、战斗段落音乐逻辑与动态音乐测试。",
     worksEyebrow: "Works",
@@ -213,6 +216,9 @@ const i18n = {
     visualNovelDescription: "Contributing to concept development, visual direction discussions, and music atmosphere design.",
     cardGameTitle: "Card Game",
     cardGameDescription: "Responsible for character illustration, visual assets, and the coordination of the sound identity.",
+    cardGameGallery: "Card game images",
+    carouselPrev: "Previous image",
+    carouselNext: "Next image",
     metroidvaniaTitle: "Metroidvania-Style Game",
     metroidvaniaDescription: "Working on game scoring, battle music logic, and adaptive music tests.",
     worksEyebrow: "Works",
@@ -345,6 +351,9 @@ const i18n = {
     visualNovelDescription: "企画コンセプトの推進、ビジュアル方向の検討、音楽による雰囲気設計に参加しています。",
     cardGameTitle: "カードゲーム",
     cardGameDescription: "キャラクターイラスト、ビジュアル素材、サウンドイメージの連携設計を担当しています。",
+    cardGameGallery: "カードゲームの画像",
+    carouselPrev: "前の画像",
+    carouselNext: "次の画像",
     metroidvaniaTitle: "メトロイドヴァニア系ゲーム",
     metroidvaniaDescription: "ゲーム音楽、バトルパートの音楽ロジック、アダプティブミュージックのテストを行っています。",
     worksEyebrow: "作品",
@@ -983,6 +992,41 @@ function setupPaging() {
   });
 }
 
+// Project image carousels: native horizontal scroll with snap points (so
+// trackpad and touch swipes page through), plus arrow buttons, arrow keys
+// and a position indicator.
+function setupCarousels() {
+  document.querySelectorAll("[data-carousel]").forEach((carousel) => {
+    const track = carousel.querySelector(".carousel-track");
+    const dots = [...carousel.querySelectorAll(".carousel-dots i")];
+    const count = track?.children.length || 0;
+    if (!track || count < 2) return;
+
+    const currentIndex = () => Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+    const goTo = (index, instant = false) => {
+      const target = ((index % count) + count) % count;
+      track.scrollTo({ left: target * track.clientWidth, behavior: instant || motionQuery.matches ? "auto" : "smooth" });
+    };
+    const sync = () => {
+      const index = currentIndex();
+      dots.forEach((dot, i) => dot.classList.toggle("is-active", i === index));
+    };
+
+    track.addEventListener("scroll", sync, { passive: true });
+    carousel.querySelectorAll("[data-carousel-step]").forEach((button) => {
+      button.addEventListener("click", () => goTo(currentIndex() + Number(button.dataset.carouselStep)));
+    });
+    track.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+        event.preventDefault();
+        goTo(currentIndex() + (event.key === "ArrowRight" ? 1 : -1));
+      }
+    });
+    window.addEventListener("resize", () => goTo(currentIndex(), true));
+    sync();
+  });
+}
+
 function setupReveal() {
   const targets = document.querySelectorAll("[data-reveal], .music-item, .illustration-card");
 
@@ -1171,6 +1215,7 @@ setupPaging();
 setupReveal();
 setupScrollSpy();
 setupIllustrationMasonry();
+setupCarousels();
 setupLocalTime();
 setupBgm();
 setupBgmGuide();
