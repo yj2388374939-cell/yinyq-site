@@ -1445,15 +1445,76 @@ main {
 }
 
 .illustration-card {
+  --drop: 0px;
   position: relative;
   display: block;
   width: 100%;
+  padding-top: var(--drop);
   padding-bottom: 32px;
   text-decoration: none;
 }
 
 .illustration-card-wide {
   grid-column: span 2;
+}
+
+/* Constructivist rhythm (desktop): a 12-column field where cards take
+   different widths, drop to different depths and some shrink inward, so
+   rows never line up into a plain grid. The 8-card cycle sums to 12
+   columns per row (5+4+3, 4+3+5, …); dense packing fills the rest. */
+@media (min-width: 861px) {
+  .illustration-masonry {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .illustration-card {
+    grid-column: span 4;
+  }
+
+  .illustration-card-wide {
+    grid-column: span 8;
+  }
+
+  .illustration-card:not(.illustration-card-wide):nth-child(8n + 1) {
+    grid-column: span 5;
+  }
+
+  .illustration-card:not(.illustration-card-wide):nth-child(8n + 2) {
+    --drop: clamp(48px, 7vw, 112px);
+  }
+
+  .illustration-card:not(.illustration-card-wide):nth-child(8n + 3) {
+    --drop: clamp(20px, 3vw, 48px);
+    grid-column: span 3;
+  }
+
+  .illustration-card:not(.illustration-card-wide):nth-child(8n + 4) {
+    padding-left: 12%;
+  }
+
+  .illustration-card:not(.illustration-card-wide):nth-child(8n + 5) {
+    --drop: clamp(64px, 9vw, 144px);
+    grid-column: span 3;
+  }
+
+  .illustration-card:not(.illustration-card-wide):nth-child(8n + 6) {
+    --drop: clamp(24px, 3.5vw, 56px);
+    grid-column: span 5;
+    padding-right: 10%;
+  }
+
+  .illustration-card:not(.illustration-card-wide):nth-child(8n + 7) {
+    --drop: clamp(32px, 5vw, 80px);
+  }
+
+  .illustration-card:not(.illustration-card-wide):nth-child(8n + 8) {
+    padding-left: 18%;
+  }
+
+  /* Captions of the deepest drops sit flush right, against the grain. */
+  .illustration-card:not(.illustration-card-wide):is(:nth-child(8n + 2), :nth-child(8n + 5)) > div {
+    text-align: right;
+  }
 }
 
 .illustration-card img {
@@ -1468,7 +1529,7 @@ main {
   content: "";
   position: absolute;
   z-index: 1;
-  top: -8px;
+  top: calc(var(--drop) - 8px);
   right: -8px;
   width: 22px;
   aspect-ratio: 1;
@@ -2589,6 +2650,14 @@ main {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .illustration-card:not(.illustration-card-wide):nth-child(4n + 2) {
+    --drop: 40px;
+  }
+
+  .illustration-card:not(.illustration-card-wide):nth-child(4n + 3) {
+    padding-right: 12%;
+  }
+
   .skill-columns > div:first-child,
   .skill-columns > div:last-child {
     grid-column: 1 / -1;
@@ -2709,6 +2778,11 @@ main {
 
   .illustration-card-wide {
     grid-column: auto;
+  }
+
+  .illustration-card.illustration-card:not(.illustration-card-wide):nth-child(n) {
+    --drop: 0px;
+    padding-right: 0;
   }
 
   .c-square {
