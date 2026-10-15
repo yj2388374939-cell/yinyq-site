@@ -2197,32 +2197,71 @@ main {
     animation-delay: 920ms;
   }
 
+  /* Each shape plays its entry, then drifts forever: a few pixels and a
+     degree or two, every shape on its own period so they never move in
+     step. The drift animates the individual translate/rotate properties,
+     which compose with the scroll-driven transform. Drifts that touch a
+     property the entry also animates start after the entry ends. */
   .motion .s-plane {
-    animation: wipeRight 820ms var(--ease) 0ms backwards;
+    --fd: 11s; --fdl: 900ms; --fx: 6px; --fy: -10px; --fr: -0.8deg;
+    animation: wipeRight 820ms var(--ease) 0ms backwards, floaty var(--fd) ease-in-out var(--fdl) infinite alternate;
   }
 
   .motion .s-line {
-    animation: wipeRight 800ms var(--ease) 300ms backwards;
+    --fd: 9s; --fdl: 1.1s; --fx: -8px; --fy: 4px; --fr: 0.6deg;
+    animation: wipeRight 800ms var(--ease) 300ms backwards, floaty var(--fd) ease-in-out var(--fdl) infinite alternate;
   }
 
   .motion .s-line-b {
-    animation-delay: 520ms;
+    --fd: 13s; --fx: 10px; --fy: -3px; --fr: -0.5deg;
+    animation: wipeRight 800ms var(--ease) 520ms backwards, floaty var(--fd) ease-in-out var(--fdl) infinite alternate;
   }
 
   .motion .s-bar {
-    animation: wipeRight 760ms var(--ease) 420ms backwards;
+    --fd: 8s; --fdl: 1.2s; --fx: -6px; --fy: 8px; --fr: 1deg;
+    animation: wipeRight 760ms var(--ease) 420ms backwards, floaty var(--fd) ease-in-out var(--fdl) infinite alternate;
   }
 
   .motion .s-square {
-    animation: popSquare 900ms var(--ease-out) 640ms backwards;
+    --fd: 10s; --fdl: 1.6s; --fx: 4px; --fy: -12px; --fr: 4deg;
+    animation: popSquare 900ms var(--ease-out) 640ms backwards, floaty var(--fd) ease-in-out var(--fdl) infinite alternate;
   }
 
   .motion .s-circle {
-    animation: dropCircle 900ms var(--ease-out) 760ms backwards;
+    --fd: 7s; --fdl: 1.8s; --fx: -5px; --fy: -9px; --fr: 0deg;
+    animation: dropCircle 900ms var(--ease-out) 760ms backwards, floaty var(--fd) ease-in-out var(--fdl) infinite alternate;
   }
 
   .motion .s-chip {
-    animation: wipeRight 520ms var(--ease) 900ms backwards;
+    --fd: 6.5s; --fdl: 1.5s; --fx: 12px; --fy: -6px; --fr: -2deg;
+    animation: wipeRight 520ms var(--ease) 900ms backwards, floaty var(--fd) ease-in-out var(--fdl) infinite alternate;
+  }
+
+  /* Page compositions drift the same way; nth-child varies the period,
+     direction and phase. */
+  .motion .g {
+    --fd: 9s; --fdl: 0s; --fx: 4px; --fy: -7px; --fr: 1.2deg;
+    animation: floaty var(--fd) ease-in-out var(--fdl) infinite alternate;
+  }
+
+  .motion .g:nth-child(3n + 2) {
+    --fd: 11.5s; --fdl: -3s; --fx: -6px; --fy: 6px; --fr: -1.6deg;
+  }
+
+  .motion .g:nth-child(3n) {
+    --fd: 13s; --fdl: -6s; --fx: 2px; --fy: -10px; --fr: 2deg;
+  }
+
+  /* The cross's two bars rotate about the same centre, so they must drift
+     identically or the cross pulls apart. */
+  .motion .geo-skills :is(.g-cross-h, .g-cross-v) {
+    --fd: 10s; --fdl: 0s; --fx: 3px; --fy: -6px; --fr: 1.5deg;
+  }
+
+  /* The contact square and bar animate rotate/translate for their reveal,
+     so only the circle drifts here, with a translate-only bob. */
+  .motion .contact-section.is-inview .c-circle {
+    animation: bob 7s ease-in-out 1.4s infinite alternate;
   }
 
   /* Scroll reveals */
@@ -2339,7 +2378,7 @@ main {
   }
 
   .bgm-live .footer-marks i:nth-child(2),
-  .bgm-live .c-circle {
+  .bgm-live .contact-section.is-inview .c-circle {
     animation: beatScale 1.6s ease-in-out infinite;
   }
 }
@@ -2394,6 +2433,28 @@ main {
   from {
     opacity: 0;
     translate: 0 -80px;
+  }
+}
+
+@keyframes floaty {
+  from {
+    translate: 0 0;
+    rotate: 0deg;
+  }
+
+  to {
+    translate: var(--fx, 0px) var(--fy, -8px);
+    rotate: var(--fr, 1deg);
+  }
+}
+
+@keyframes bob {
+  from {
+    translate: 0 0;
+  }
+
+  to {
+    translate: 0 -14px;
   }
 }
 
