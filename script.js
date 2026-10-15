@@ -1030,6 +1030,103 @@ function setupPaging() {
   });
 }
 
+// Lays out one gallery sheet so every work is shown whole: items are cut
+// into rows (order kept), every item in a row shares the row height and keeps
+// its own aspect ratio, so nothing is cropped. Every way of cutting the rows
+// is tried; each is scaled down to fit the height budget if needed, and the
+// one that shows the most image area wins. Row widths and alignment alternate
+// for a constructivist rhythm (scaled rows also leave asymmetric space).
+const galleryRowShape = [
+  { width: 1, align: "start" },
+  { width: 0.88, align: "end" },
+  { width: 0.94, align: "start" },
+];
+
+// Inner margin so the hover lift/shadow is not clipped by the scroller.
+const gallerySheetPad = 8;
+
+function layoutGallerySheet(sheet, outerWidth, outerBudget, gap) {
+  const pad = gallerySheetPad;
+  const width = outerWidth - pad * 2;
+  const heightBudget = outerBudget - pad * 2;
+  const items = [...sheet.children];
+  const ratios = items.map((item) => {
+    if (item.classList.contains("sheet-mark")) return width < 600 ? 2.4 : 0.72;
+    const img = item.querySelector("img");
+    const w = Number(img?.getAttribute("width")) || img?.naturalWidth || 1;
+    const h = Number(img?.getAttribute("height")) || img?.naturalHeight || 1;
+    return w / h;
+  });
+  const n = items.length;
+  // No work may shrink below this width (phones need bigger thumbnails).
+  const minItemWidth = width * (width < 600 ? 0.3 : 0.1);
+  let best = null;
+  let fallback = null;
+
+  // Try every row cut, and every starting phase of the row-width rhythm.
+  for (let combo = 0; combo < (1 << (n - 1)) << 2; combo += 1) {
+    const mask = combo >> 2;
+    const phase = combo & 3;
+    if (phase >= galleryRowShape.length) continue;
+    const rows = [];
+    let start = 0;
+    for (let i = 0; i < n; i += 1) {
+      if (i === n - 1 || mask & (1 << i)) {
+        rows.push([start, i + 1]);
+        start = i + 1;
+      }
+    }
+
+    let total = gap * (rows.length - 1);
+    let area = 0;
+    const shaped = rows.map(([from, to], r) => {
+      const shape = galleryRowShape[(r + phase) % galleryRowShape.length];
+      const rowWidth = width * shape.width;
+      const count = to - from;
+      const ratioSum = ratios.slice(from, to).reduce((sum, ratio) => sum + ratio, 0);
+      const height = (rowWidth - gap * (count - 1)) / ratioSum;
+      total += height;
+      area += ratioSum * height * height;
+      return { from, to, height, align: shape.align };
+    });
+
+    const scale = Math.min(1, (heightBudget - gap * (rows.length - 1)) / (total - gap * (rows.length - 1)));
+    const score = area * scale * scale;
+    const narrowest = Math.min(...shaped.flatMap((row) =>
+      ratios.slice(row.from, row.to).map((ratio) => ratio * row.height * scale),
+    ));
+    const candidate = { rows: shaped, scale, score };
+    if (narrowest >= minItemWidth) {
+      if (!best || score > best.score) best = candidate;
+    } else if (!fallback || narrowest > fallback.narrowest) {
+      fallback = { ...candidate, narrowest };
+    }
+  }
+
+  best = best || fallback;
+  if (!best) return;
+
+  const { scale } = best;
+  let y = pad;
+  best.rows.forEach((row) => {
+    const height = row.height * scale;
+    const used = ratios.slice(row.from, row.to).reduce((sum, ratio) => sum + ratio * height, 0) + gap * (row.to - row.from - 1);
+    let x = pad + (row.align === "end" ? width - used : 0);
+    for (let i = row.from; i < row.to; i += 1) {
+      const itemWidth = ratios[i] * height;
+      Object.assign(items[i].style, {
+        left: `${x.toFixed(1)}px`,
+        top: `${y.toFixed(1)}px`,
+        width: `${itemWidth.toFixed(1)}px`,
+        height: `${height.toFixed(1)}px`,
+      });
+      x += itemWidth + gap;
+    }
+    y += height + gap;
+  });
+  sheet.style.height = `${Math.ceil(y - gap + pad)}px`;
+}
+
 // Paged illustration gallery. The cards stay in index.html in newest-first
 // order (add new work there exactly as before); this splits them into sheets
 // of eight laid out as a fixed constructivist mosaic, turned horizontally by
@@ -1140,7 +1237,26 @@ function setupGallery() {
       goTo(currentIndex() + (event.key === "ArrowRight" ? 1 : -1));
     }
   });
-  window.addEventListener("resize", () => goTo(currentIndex(), true));
+  // Height budget: the sheet plus its heading and page bar fit one screen on
+  // desktop; phones allow a taller sheet and scroll a little.
+  const layout = () => {
+    const index = currentIndex();
+    const width = track.clientWidth;
+    const headerH = getHeaderHeight();
+    const compact = width < 700;
+    const budget = compact
+      ? Math.max(520, window.innerHeight * 1.25)
+      : clampNumber(window.innerHeight - headerH - 190, 420, 820);
+    const gap = compact ? 10 : clampNumber(width * 0.012, 10, 18);
+    sheets.forEach((sheet) => layoutGallerySheet(sheet, width, budget, gap));
+    track.scrollTo({ left: index * width, behavior: "auto" });
+  };
+  let layoutTimer = 0;
+  window.addEventListener("resize", () => {
+    window.clearTimeout(layoutTimer);
+    layoutTimer = window.setTimeout(layout, 80);
+  });
+  layout();
   sync();
 }
 
