@@ -46,6 +46,23 @@ html {
   overflow-x: clip;
   scroll-behavior: smooth;
   scroll-padding-top: calc(var(--header-h) + 8px);
+  /* Proximity, not mandatory: sections like Works are many screens tall and
+     must stay freely scrollable; snapping only engages near a section edge. */
+  scroll-snap-type: y proximity;
+}
+
+/* Snap points: the hero, every section heading, the two works sub-lists and
+   the contact block. */
+.hero,
+.section-head,
+.subsection-heading,
+.contact-section {
+  scroll-snap-align: start;
+}
+
+.section-head,
+.subsection-heading {
+  scroll-margin-top: clamp(12px, 2.5vw, 36px);
 }
 
 body {
