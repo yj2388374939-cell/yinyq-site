@@ -853,10 +853,15 @@ function getHeaderHeight() {
 // gesture turns the page. Trackpad momentum after a turn is swallowed so one
 // flick never skips pages.
 const pageQuery = window.matchMedia("(min-width: 861px) and (hover: hover) and (pointer: fine)");
-const pageTurnMs = 820;
-const pageSettleMs = 380;
-const wheelGapMs = 140;
-const swallowMaxMs = 1200;
+const pageTurnMs = 700;
+const pageSettleMs = 340;
+// After a page turn, only the trackpad's momentum tail is swallowed: events
+// that arrive in quick succession AND are not growing. A new swipe starts
+// with growing deltas and is accepted at once; mouse-wheel notches (large,
+// steady deltas) are never treated as momentum.
+const wheelGapMs = 120;
+const swallowMaxMs = 900;
+const momentumMaxDelta = 60;
 
 function getPageStops() {
   const pages = [...document.querySelectorAll(".hero, .content-section, .contact-section")];
@@ -877,6 +882,7 @@ function setupPaging() {
   let swallow = false;
   let swallowSince = 0;
   let lastWheelAt = 0;
+  let lastWheelAbs = 0;
   let frame = 0;
 
   const syncMode = () => root.classList.toggle("paged", pageQuery.matches);
@@ -973,7 +979,10 @@ function setupPaging() {
 
       const now = performance.now();
       const gap = now - lastWheelAt;
+      const abs = Math.abs(delta);
+      const previousAbs = lastWheelAbs;
       lastWheelAt = now;
+      lastWheelAbs = abs;
 
       if (animating) {
         event.preventDefault();
@@ -981,7 +990,8 @@ function setupPaging() {
       }
 
       if (swallow) {
-        if (gap < wheelGapMs && now - swallowSince < swallowMaxMs) {
+        const momentumTail = gap < wheelGapMs && abs < momentumMaxDelta && abs <= previousAbs + 1;
+        if (momentumTail && now - swallowSince < swallowMaxMs) {
           event.preventDefault();
           return;
         }
@@ -1028,6 +1038,73 @@ function setupPaging() {
     window.history.pushState(null, "", `#${id}`);
     animateTo(starts[index]);
   });
+}
+
+// Auto-advance for the carousel and the gallery: after a stretch without
+// interaction the next page turns by itself (wrapping at the end). It pauses
+// while the pointer is over it, while it has keyboard focus, while it is
+// mostly off screen or the tab is hidden, and never runs with reduced motion.
+// Any interaction restarts the countdown; a thin red bar shows its progress.
+function setupAutoAdvance(rootEl, advance, intervalMs, barHost = rootEl) {
+  if (motionQuery.matches || !("IntersectionObserver" in window)) return;
+
+  const bar = document.createElement("span");
+  bar.className = "autoplay-bar";
+  bar.setAttribute("aria-hidden", "true");
+  bar.style.setProperty("--autoplay-ms", `${intervalMs}ms`);
+  barHost.append(bar);
+
+  let timer = 0;
+  let hovered = false;
+  let focused = false;
+  let visible = false;
+  const canRun = () => visible && !hovered && !focused && !document.hidden;
+  const schedule = () => {
+    window.clearTimeout(timer);
+    bar.classList.remove("is-running");
+    if (!canRun()) return;
+    void bar.offsetWidth; // restart the fill animation
+    bar.classList.add("is-running");
+    timer = window.setTimeout(() => {
+      if (canRun()) advance();
+      schedule();
+    }, intervalMs);
+  };
+
+  rootEl.addEventListener("pointerenter", (event) => {
+    if (event.pointerType === "mouse") {
+      hovered = true;
+      schedule();
+    }
+  });
+  rootEl.addEventListener("pointerleave", (event) => {
+    if (event.pointerType === "mouse") {
+      hovered = false;
+      schedule();
+    }
+  });
+  // Pause for keyboard focus only; a mouse click on a button shouldn't
+  // leave autoplay paused until focus moves elsewhere.
+  rootEl.addEventListener("focusin", (event) => {
+    if (event.target.matches?.(":focus-visible")) {
+      focused = true;
+      schedule();
+    }
+  });
+  rootEl.addEventListener("focusout", (event) => {
+    if (!rootEl.contains(event.relatedTarget)) {
+      focused = false;
+      schedule();
+    }
+  });
+  ["pointerdown", "wheel", "touchstart", "keydown"].forEach((type) => {
+    rootEl.addEventListener(type, schedule, { passive: true });
+  });
+  document.addEventListener("visibilitychange", schedule);
+  new IntersectionObserver(([entry]) => {
+    visible = entry.isIntersecting;
+    schedule();
+  }, { threshold: 0.6 }).observe(rootEl);
 }
 
 // Gallery layout: every work is shown whole. A sheet's items are cut into
@@ -1372,6 +1449,7 @@ function setupGallery() {
   lastWidth = window.innerWidth;
   lastHeight = window.innerHeight;
   layout();
+  setupAutoAdvance(gallery, () => goTo(currentIndex() + 1), 8000, nav);
 }
 
 // Project image carousels: native horizontal scroll with snap points (so
@@ -1406,6 +1484,7 @@ function setupCarousels() {
     });
     window.addEventListener("resize", () => goTo(currentIndex(), true));
     sync();
+    setupAutoAdvance(carousel, () => goTo(currentIndex() + 1), 5000);
   });
 }
 

@@ -1933,6 +1933,41 @@ main {
   }
 }
 
+/* Auto-advance progress (setupAutoAdvance in script.js) ----------------------- */
+
+.autoplay-bar {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--red);
+  transform: scaleX(0);
+  transform-origin: left;
+  pointer-events: none;
+}
+
+.autoplay-bar.is-running {
+  animation: autoplayFill var(--autoplay-ms, 6000ms) linear forwards;
+}
+
+.gallery-nav {
+  position: relative;
+}
+
+.gallery-nav > .autoplay-bar {
+  top: -7px;
+  bottom: auto;
+  height: 2px;
+}
+
+@keyframes autoplayFill {
+  to {
+    transform: scaleX(1);
+  }
+}
+
 /* Skills --------------------------------------------------------------------- */
 
 .skill-columns {
