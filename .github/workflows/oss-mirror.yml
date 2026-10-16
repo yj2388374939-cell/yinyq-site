@@ -62,7 +62,7 @@ jobs:
         run: |
           mkdir _site
           cp index.html script.js styles.css favicon.svg _site/
-          cp -R assets works _site/
+          cp -R assets works projects _site/
           find _site -name '.DS_Store' -delete
           echo "Files to publish: $(find _site -type f | wc -l)"
 

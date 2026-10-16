@@ -1513,6 +1513,55 @@ main {
   transform: scaleY(1);
 }
 
+/* Experience rows with a detail page: the title is a link stretched over
+   the whole row, with a red "Details" tag after it. */
+.timeline-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.timeline-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.timeline-link:focus-visible {
+  outline: none;
+}
+
+.timeline-item.has-detail:focus-within {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+
+.timeline-badge {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  margin-left: 10px;
+  padding: 2px 7px;
+  background: var(--red);
+  color: var(--on-red);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  vertical-align: 0.1em;
+  white-space: nowrap;
+}
+
+.timeline-badge::after {
+  content: "";
+  width: 12px;
+  height: 2px;
+  background: currentColor;
+  transition: width 360ms var(--ease);
+}
+
+.timeline-item.has-detail:hover .timeline-badge::after {
+  width: 22px;
+}
+
 .timeline-date {
   grid-column: 1 / 3;
   font-size: 14px;
@@ -3300,6 +3349,82 @@ main {
   display: block;
   width: 100%;
   height: auto;
+}
+
+/* Project detail pages (projects/*.html): key facts, then photos with
+   multilingual captions. Add more <figure class="detail-figure"> blocks to
+   the .detail-figures list for further photos. */
+.project-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0;
+  margin: 0 0 20px;
+  border-top: var(--rule) solid var(--ink);
+}
+
+.project-facts div {
+  padding: 12px 16px 12px 0;
+  border-bottom: 1px solid var(--ink);
+}
+
+.project-facts dt {
+  color: var(--red);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.project-facts dd {
+  margin: 4px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.detail-figures {
+  display: grid;
+  gap: clamp(40px, 6vw, 72px);
+}
+
+.detail-caption {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px 18px;
+  border-top: var(--rule) solid var(--ink);
+  background: var(--paper);
+}
+
+.detail-caption p {
+  max-width: 62em;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.detail-caption p[lang="zh-CN"] {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.caption-title {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: var(--ink) !important;
+  font-size: 13px !important;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.caption-title span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 20px;
+  background: var(--red);
+  color: var(--on-red);
+  font-size: 11px;
+  letter-spacing: 0;
 }
 
 /* ==========================================================================
