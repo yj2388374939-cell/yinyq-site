@@ -3307,6 +3307,7 @@ main {
   letter-spacing: -0.035em;
   line-height: 1;
   overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 .work-detail-meta {
@@ -3383,6 +3384,11 @@ main {
 .detail-figures {
   display: grid;
   gap: clamp(40px, 6vw, 72px);
+}
+
+/* Portrait photos (passes, documents) sit narrower so they don't tower. */
+.detail-figure--portrait {
+  width: min(100%, 480px);
 }
 
 .detail-caption {
