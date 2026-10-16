@@ -42,7 +42,7 @@
         document.documentElement.classList.add("motion");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=20261016-autoplay" />
+    <link rel="stylesheet" href="styles.css?v=20261017-skills" />
   </head>
   <body>
     <header class="site-header">
@@ -922,7 +922,7 @@
       </div>
       </section>
 
-      <section class="content-section split-section" id="skills">
+      <section class="content-section" id="skills">
         <div class="section-head" data-reveal>
           <div class="page-geo geo-skills" aria-hidden="true">
             <span class="g g-cross-h"></span>
@@ -938,33 +938,78 @@
         </div>
 
         <div class="skill-columns">
-          <div data-reveal>
+          <div class="skill-block" data-reveal>
             <h3 data-i18n="coreSkillsTitle">核心技能</h3>
-            <div class="chips" aria-label="技能标签" data-i18n-aria="skillTagsAria">
-              <span data-i18n="skillProjectManagement">项目管理</span>
-              <span data-i18n="skillJapaneseCommunication">日语沟通</span>
-              <span data-i18n="skillCrossTeam">跨团队协作</span>
-              <span data-i18n="skillIllustration">插画设计</span>
-              <span data-i18n="skillGraphicDesign">平面设计</span>
-              <span data-i18n="skillComposition">作曲编曲</span>
+            <div class="skill-groups" aria-label="技能标签" data-i18n-aria="skillTagsAria">
+              <div class="skill-group">
+                <p class="group-label"><span aria-hidden="true">A</span><span data-i18n="skillGroupCreate">创作</span></p>
+                <div class="chips">
+                  <span data-i18n="skillComposition">作曲编曲</span>
+                  <span data-i18n="skillIllustration">插画设计</span>
+                  <span data-i18n="skillGraphicDesign">平面设计</span>
+                </div>
+              </div>
+              <div class="skill-group">
+                <p class="group-label"><span aria-hidden="true">B</span><span data-i18n="skillGroupCollab">协作</span></p>
+                <div class="chips">
+                  <span data-i18n="skillProjectManagement">项目管理</span>
+                  <span data-i18n="skillJapaneseCommunication">日语沟通</span>
+                  <span data-i18n="skillCrossTeam">跨团队协作</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div data-reveal>
+          <div class="skill-block" data-reveal>
+            <h3 data-i18n="toolsTitle">软件与工具</h3>
+            <div class="tool-rows">
+              <div class="tool-row">
+                <p class="group-label" data-i18n="toolGroupSound">声音</p>
+                <ul class="tools">
+                  <li>Cubase</li>
+                </ul>
+              </div>
+              <div class="tool-row">
+                <p class="group-label" data-i18n="toolGroupDev">开发 · 3D</p>
+                <ul class="tools">
+                  <li>Unity</li>
+                  <li>Maya</li>
+                </ul>
+              </div>
+              <div class="tool-row">
+                <p class="group-label" data-i18n="toolGroupVisual">视觉</p>
+                <ul class="tools">
+                  <li>Procreate</li>
+                  <li>Adobe Photoshop</li>
+                  <li>Adobe Illustrator</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="skill-block education-block" data-reveal>
             <h3 data-i18n="educationTitle">教育背景</h3>
-            <div class="education-list">
-              <div class="education-item">
-                <p class="education-period" data-i18n="educationSenzokuPeriod">2026 - 至今</p>
-                <p class="education-line" data-i18n="educationSenzoku">洗足学园音乐大学 · 作曲 - 音响设计 · 硕士</p>
-              </div>
-              <div class="education-item">
-                <p class="education-period" data-i18n="educationDcUPeriod">2024 - 2025</p>
-                <p class="education-line" data-i18n="educationDcU">大邱加图立大学 · 新媒体与游戏设计 · 学士</p>
-              </div>
-              <div class="education-item">
+            <!-- Each bar sits on a shared 2017–2027 year axis: --from / --to are
+                 years. The ongoing degree runs to the axis end and fades out. -->
+            <ol class="edu-timeline" style="--axis-from: 2017; --axis-to: 2027">
+              <li class="edu-row" style="--from: 2017; --to: 2022">
                 <p class="education-period" data-i18n="educationGdfaPeriod">2017 - 2022</p>
                 <p class="education-line" data-i18n="educationGdfa">广东省外语艺术职业学院 · 音乐教育 · 专科</p>
-              </div>
+                <span class="edu-track" aria-hidden="true"><span class="edu-bar"></span></span>
+              </li>
+              <li class="edu-row" style="--from: 2024; --to: 2025">
+                <p class="education-period" data-i18n="educationDcUPeriod">2024 - 2025</p>
+                <p class="education-line" data-i18n="educationDcU">大邱加图立大学 · 新媒体与游戏设计 · 学士</p>
+                <span class="edu-track" aria-hidden="true"><span class="edu-bar"></span></span>
+              </li>
+              <li class="edu-row is-current" style="--from: 2026; --to: 2027">
+                <p class="education-period" data-i18n="educationSenzokuPeriod">2026 - 至今</p>
+                <p class="education-line" data-i18n="educationSenzoku">洗足学园音乐大学 · 作曲 - 音响设计 · 硕士</p>
+                <span class="edu-track" aria-hidden="true"><span class="edu-bar"></span></span>
+              </li>
+            </ol>
+            <div class="edu-axis" aria-hidden="true">
+              <span>2017</span><span>2018</span><span>2019</span><span>2020</span><span>2021</span><span>2022</span><span>2023</span><span>2024</span><span>2025</span><span>2026</span><span>2027</span>
             </div>
           </div>
         </div>
@@ -993,6 +1038,6 @@
 
     <div class="toast" role="status" aria-live="polite" hidden></div>
 
-    <script src="script.js?v=20261016-autoplay"></script>
+    <script src="script.js?v=20261017-skills"></script>
   </body>
 </html>
