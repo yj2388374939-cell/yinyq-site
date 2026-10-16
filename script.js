@@ -881,18 +881,39 @@ const wheelGapMs = 120;
 const swallowMaxMs = 900;
 const momentumMaxDelta = 60;
 
+// Page stops: the hero, each nav section, and any [data-page-stop] block
+// inside a tall section (the illustration gallery). A sub-stop is placed so
+// its whole block fits the screen (heading at top, page bar at bottom), so a
+// tall Works page turns as two clean screens instead of scroll + snap.
+// A page whose overflow is only a sliver (bottom padding) counts as fitting,
+// so no tiny leftover scroll ("bounce") happens before the next turn.
+const pageOverflowTolerance = 40;
+
 function getPageStops() {
-  const pages = [...document.querySelectorAll(".hero, .content-section, .contact-section")];
   const headerH = getHeaderHeight();
   const view = window.innerHeight - headerH;
   const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-  const starts = pages.map((page, index) =>
-    index === 0 ? 0 : Math.min(maxScroll, Math.round(page.getBoundingClientRect().top + window.scrollY - headerH)),
-  );
+  const docTop = (el) => el.getBoundingClientRect().top + window.scrollY;
 
-  return { pages, starts, ends: starts.map((start, index) =>
-    index < starts.length - 1 ? Math.max(start, starts[index + 1] - view) : maxScroll,
-  ) };
+  const pages = [...document.querySelectorAll(".hero, .content-section, .contact-section, [data-page-stop]")];
+  const starts = pages.map((page, index) => {
+    if (index === 0) return 0;
+    if (!page.hasAttribute("data-page-stop")) {
+      return Math.min(maxScroll, Math.round(docTop(page) - headerH));
+    }
+    const top = docTop(page) - headerH - 16;
+    const bottom = docTop(page) + page.offsetHeight + 24;
+    // Bottom-align the block when it fits, never pushing its heading off top.
+    return Math.min(maxScroll, Math.round(Math.min(top, Math.max(top - view, bottom - window.innerHeight))));
+  });
+
+  const ends = starts.map((start, index) => {
+    if (index === starts.length - 1) return maxScroll;
+    const end = Math.max(start, starts[index + 1] - view);
+    return end - start <= pageOverflowTolerance ? start : end;
+  });
+
+  return { pages, starts, ends };
 }
 
 function setupPaging() {

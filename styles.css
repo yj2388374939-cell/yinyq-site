@@ -865,6 +865,60 @@ main {
   text-transform: uppercase;
 }
 
+/* Desktop hero sizes follow the window height as well as its width, so the
+   hero fits one screen (wheel paging then turns it in one clean step instead
+   of scrolling a leftover sliver first). */
+@media (min-width: 861px) {
+  .hero {
+    gap: clamp(16px, 3.2svh, 56px);
+    padding-top: max(clamp(16px, 3.6svh, 64px), var(--bgm-guide-content-offset, 0px));
+    padding-bottom: clamp(12px, 2.4svh, 36px);
+  }
+
+  .hero-name {
+    margin: clamp(8px, 1.6svh, 18px) 0 clamp(10px, 2svh, 22px);
+    font-size: clamp(56px, min(10.5vw, 15svh), 172px);
+  }
+
+  .profile-text {
+    gap: clamp(4px, 1svh, 10px);
+    margin-top: clamp(10px, 2.2svh, 22px);
+  }
+
+  .summary {
+    line-height: 1.6;
+  }
+
+  .contact-strip {
+    margin-top: clamp(12px, 2.6svh, 26px);
+  }
+
+  .profile-side {
+    gap: clamp(10px, 1.8svh, 18px);
+  }
+
+  .portrait-card,
+  .local-time-card {
+    width: min(100%, 360px, 38svh);
+  }
+
+  .local-time-card {
+    padding: clamp(8px, 1.4svh, 14px) 16px;
+  }
+
+  .local-time-value {
+    font-size: clamp(24px, min(3vw, 4.4svh), 42px);
+  }
+
+  .metric {
+    padding-top: clamp(10px, 1.8svh, 18px);
+  }
+
+  .metric-value {
+    font-size: clamp(30px, min(5vw, 7.5svh), 76px);
+  }
+}
+
 /* ==========================================================================
    Sections
    ========================================================================== */
@@ -1520,7 +1574,9 @@ main {
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 4px clamp(16px, 2vw, 32px);
   align-items: center;
-  padding: 18px 0;
+  /* Height-aware so the Works heading and the whole music list fit one
+     desktop screen (the gallery is the next page stop). */
+  padding: clamp(8px, 1.9svh, 18px) 0;
   border-bottom: 1px solid var(--ink);
   background: linear-gradient(var(--ink), var(--ink)) no-repeat 0 0 / 0% 100%;
   text-decoration: none;
