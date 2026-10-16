@@ -82,7 +82,9 @@ jobs:
           set -e
           if [ "$status" -ne 0 ]; then
             # Surface OSS's error code in the run summary (visible without the raw log).
-            reason="$(grep -o 'ErrorCode=[A-Za-z]*[^,]*, ErrorMessage="[^"]*"' sync.log | head -1)"
-            echo "::error title=OSS sync failed::${reason:-$(tail -n 3 sync.log | tr '\n' ' ')}"
+            reason="$(grep -o 'ErrorCode=[A-Za-z]*[^,]*, ErrorMessage="[^"]*"' sync.log | head -1 || true)"
+            [ -n "$reason" ] || reason="$(grep -i 'error' sync.log | tail -n 2 | tr '\n' ' ' || true)"
+            [ -n "$reason" ] || reason="$(tail -n 3 sync.log | tr '\n' ' ' || true)"
+            echo "::error title=OSS sync failed::exit ${status}: ${reason}"
             exit "$status"
           fi
