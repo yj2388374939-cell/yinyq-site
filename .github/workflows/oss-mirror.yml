@@ -72,5 +72,17 @@ jobs:
           OSS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
           OSS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
         run: |
+          # Guard against stray spaces/newlines pasted into the secrets.
+          OSS_KEY_ID="$(printf '%s' "$OSS_KEY_ID" | tr -d '[:space:]')"
+          OSS_KEY_SECRET="$(printf '%s' "$OSS_KEY_SECRET" | tr -d '[:space:]')"
+          set +e
           ossutil sync _site/ "oss://${OSS_BUCKET}/" --delete --force \
-            -e "oss-${OSS_REGION}.aliyuncs.com" -i "$OSS_KEY_ID" -k "$OSS_KEY_SECRET"
+            -e "oss-${OSS_REGION}.aliyuncs.com" -i "$OSS_KEY_ID" -k "$OSS_KEY_SECRET" 2>&1 | tee sync.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if [ "$status" -ne 0 ]; then
+            # Surface OSS's error code in the run summary (visible without the raw log).
+            reason="$(grep -o 'ErrorCode=[A-Za-z]*[^,]*, ErrorMessage="[^"]*"' sync.log | head -1)"
+            echo "::error title=OSS sync failed::${reason:-$(tail -n 3 sync.log | tr '\n' ' ')}"
+            exit "$status"
+          fi
