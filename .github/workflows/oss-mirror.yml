@@ -1,0 +1,76 @@
+# Mirrors the site to an Alibaba Cloud OSS bucket so visitors in mainland
+# China can be served from Hong Kong (DNS sends the 境内 line of
+# www.yinyq.net there; everyone else keeps using GitHub Pages).
+#
+# Needs, in repo Settings → Secrets and variables → Actions:
+#   secrets   ALIYUN_ACCESS_KEY_ID, ALIYUN_ACCESS_KEY_SECRET
+#             (RAM user github-deploy, policy limited to this one bucket)
+#   variables OSS_BUCKET (e.g. yinyq-site-hk), OSS_REGION (e.g. cn-hongkong)
+# Without them the job skips instead of failing.
+
+name: Mirror to Alibaba Cloud OSS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: oss-mirror
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    env:
+      OSS_BUCKET: ${{ vars.OSS_BUCKET }}
+      OSS_REGION: ${{ vars.OSS_REGION }}
+      OSSUTIL_VERSION: 1.7.19
+      OSSUTIL_SHA256: dcc512e4a893e16bbee63bc769339d8e56b21744fd83c8212a9d8baf28767343
+    steps:
+      - name: Check configuration
+        id: config
+        env:
+          HAS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID != '' }}
+          HAS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET != '' }}
+        run: |
+          if [ -z "$OSS_BUCKET" ] || [ -z "$OSS_REGION" ] || [ "$HAS_KEY_ID" != "true" ] || [ "$HAS_KEY_SECRET" != "true" ]; then
+            echo "::notice::OSS mirror is not configured yet (secrets ALIYUN_ACCESS_KEY_ID / ALIYUN_ACCESS_KEY_SECRET and variables OSS_BUCKET / OSS_REGION); skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.config.outputs.ready == 'true'
+
+      - name: Install ossutil (pinned version, checksum verified)
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          curl -fsSL -o ossutil.zip "https://gosspublic.alicdn.com/ossutil/${OSSUTIL_VERSION}/ossutil-v${OSSUTIL_VERSION}-linux-amd64.zip"
+          echo "${OSSUTIL_SHA256}  ossutil.zip" | sha256sum -c -
+          unzip -q ossutil.zip
+          sudo install -m 0755 "ossutil-v${OSSUTIL_VERSION}-linux-amd64/ossutil64" /usr/local/bin/ossutil
+          rm -rf ossutil.zip "ossutil-v${OSSUTIL_VERSION}-linux-amd64"
+          ossutil --version
+
+      - name: Stage the public site files only
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          mkdir _site
+          cp index.html script.js styles.css favicon.svg _site/
+          cp -R assets works _site/
+          find _site -name '.DS_Store' -delete
+          echo "Files to publish: $(find _site -type f | wc -l)"
+
+      - name: Sync to OSS
+        if: steps.config.outputs.ready == 'true'
+        env:
+          OSS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
+          OSS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+        run: |
+          ossutil sync _site/ "oss://${OSS_BUCKET}/" --delete --force \
+            -e "oss-${OSS_REGION}.aliyuncs.com" -i "$OSS_KEY_ID" -k "$OSS_KEY_SECRET"
