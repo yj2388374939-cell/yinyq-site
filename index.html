@@ -42,7 +42,7 @@
         document.documentElement.classList.add("motion");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=20261017-spring" />
+    <link rel="stylesheet" href="styles.css?v=20261017-paint" />
   </head>
   <body>
     <header class="site-header">
@@ -175,11 +175,17 @@
             <div class="supre supre-hero" aria-hidden="true">
               <span class="shape s-plane"></span>
               <span class="shape s-bar"></span>
-              <span class="shape s-square"></span>
               <span class="shape s-circle"></span>
               <span class="shape s-line"></span>
               <span class="shape s-line s-line-b"></span>
               <span class="shape s-chip"></span>
+            </div>
+            <!-- Unclipped layer for the shapes that fall into the studio banner
+                 (script.js): a black slab hidden under the time card, and the
+                 red square that becomes the banner's red mark. -->
+            <div class="supre supre-fall" aria-hidden="true">
+              <span class="fall-slab"></span>
+              <span class="shape s-square"></span>
             </div>
             <figure class="portrait-card hero-step">
               <img width="640" height="640" class="portrait-image" src="assets/yinyunqing.jpg" alt="殷雲清个人标识" />
@@ -1048,6 +1054,6 @@
 
     <div class="toast" role="status" aria-live="polite" hidden></div>
 
-    <script src="script.js?v=20261017-spring"></script>
+    <script src="script.js?v=20261017-paint"></script>
   </body>
 </html>

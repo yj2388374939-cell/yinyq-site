@@ -890,13 +890,16 @@ function setupScrollState() {
   });
 }
 
-// Hero → Projects fall: as the Projects page slides in, four hero shapes
-// (black plane, red bar, black line, blue circle) drop into the matching
-// shapes of the Projects heading. Each shape rides its own spring toward the
-// scroll position, so it trails the page, falls in with momentum, overshoots
-// a little and settles; it tilts with its speed. Once settled it hands over
-// to the Projects shape (same drift phase, same clip at the heading rule).
-// Reverses on scroll back. Desktop with motion only.
+// Hero → Projects fall: as the Projects page slides in, hero shapes drop
+// into the Projects page. The black plane, red bar, black line and blue
+// circle land on the matching shapes of the heading. A black slab slides
+// out from under the time card, hits the studio banner and splashes into
+// its black ground; the red square drops into the banner's red corner and
+// sinks into the paint. Each shape rides its own spring toward the scroll
+// position, so it trails the page, falls in with momentum, overshoots a
+// little and settles, tilting with its speed. Settled shapes hand over to
+// the real ones (same drift phase, same clip). Reverses on scroll back.
+// Desktop with motion only.
 const fallQuery = window.matchMedia("(min-width: 861px)");
 const fallPairs = [
   // hero shape, projects shape, window start, stiffness, damping ratio
@@ -904,30 +907,50 @@ const fallPairs = [
   [".supre-hero .s-bar", ".geo-projects .g-bar", 0.05, 170, 0.5],
   [".supre-hero .s-line:not(.s-line-b)", ".geo-projects .g-line", 0.1, 105, 0.58],
   [".supre-hero .s-circle", ".geo-projects .g-dot", 0.16, 210, 0.4],
+  [".supre-fall .s-square", ".featured-project .supre-mark", 0.3, 150, 0.48],
+];
+// Paint droplets thrown on impact: angle (deg), reach (× banner width), size (× banner height).
+const paintDrops = [
+  [-172, 0.2, 0.11], [-150, 0.13, 0.06], [-196, 0.3, 0.07], [-24, 0.24, 0.14],
+  [-6, 0.42, 0.06], [12, 0.33, 0.1], [160, 0.17, 0.09], [190, 0.1, 0.05],
 ];
 
 function setupHeroFall() {
   const hero = document.querySelector(".hero");
   const projects = document.getElementById("projects");
-  const layer = document.querySelector(".supre-hero");
+  const ruleLayer = document.querySelector(".supre-hero");
+  const fallLayer = document.querySelector(".supre-fall");
   const geo = document.querySelector(".geo-projects");
+  const card = document.querySelector(".local-time-card");
+  const slabEl = document.querySelector(".fall-slab");
+  const banner = document.querySelector(".featured-project");
+  const spring = (stiffness, zeta) => ({ k: stiffness, c: 2 * zeta * Math.sqrt(stiffness), pos: 0, vel: 0 });
   const pairs = fallPairs
     .map(([from, to, start, stiffness, zeta]) => ({
       from: document.querySelector(from),
       to: document.querySelector(to),
       start,
-      k: stiffness,
-      c: 2 * zeta * Math.sqrt(stiffness),
-      pos: 0,
-      vel: 0,
+      ...spring(stiffness, zeta),
       landed: false,
       fromFloat: null,
       toFloat: null,
     }))
     .filter((pair) => pair.from && pair.to);
-  if (!hero || !projects || !layer || !geo || !pairs.length) {
+  if (!hero || !projects || !ruleLayer || !fallLayer || !geo || !card || !slabEl || !banner || pairs.length !== fallPairs.length) {
     return;
   }
+  const mark = pairs[pairs.length - 1];
+  mark.splash = true;
+  const slab = { start: 0.02, ...spring(120, 0.6) };
+  const splash = spring(60, 0.5);
+  const drops = paintDrops.map(() => {
+    const drop = document.createElement("span");
+    drop.className = "paint-drop";
+    drop.setAttribute("aria-hidden", "true");
+    // Prepended so the banner's :last-child layout rules still apply.
+    banner.prepend(drop);
+    return drop;
+  });
 
   // Layout boxes in document coordinates; offsets ignore transforms.
   const docBox = (el) => {
@@ -940,15 +963,39 @@ function setupHeroFall() {
     return { x, y, cx: x + el.offsetWidth / 2, cy: y + el.offsetHeight / 2, w: el.offsetWidth, h: el.offsetHeight };
   };
   const readNum = (el, name) => parseFloat(getComputedStyle(el).getPropertyValue(name)) || 0;
-  // The drift animation's current offset (individual translate / rotate).
+  // The drift animation's (or transition's) current individual translate / rotate.
   const readFloat = (el) => {
     const style = getComputedStyle(el);
     const [tx = 0, ty = 0] = style.translate === "none" ? [] : style.translate.split(" ").map(parseFloat);
     const r = style.rotate === "none" ? 0 : parseFloat(style.rotate) || 0;
     return { tx: tx || 0, ty: ty || 0, r };
   };
+  const zero = { tx: 0, ty: 0, r: 0 };
   const setDrift = (el, running) => {
+    if (!running) {
+      // An entry animation still playing (scrolling right after load) would
+      // freeze mid-way; finish it so only the endless drift is paused.
+      el.getAnimations?.().forEach((animation) => {
+        if (animation.effect?.getComputedTiming().iterations !== Infinity) {
+          animation.finish();
+        }
+      });
+    }
     el.style.animationPlayState = running ? "" : "paused";
+  };
+  const step = (s, target, dt) => {
+    const steps = Math.max(1, Math.ceil(dt * 240));
+    const h = dt / steps;
+    for (let i = 0; i < steps; i += 1) {
+      s.vel += (-s.k * (s.pos - target) - s.c * s.vel) * h;
+      s.pos += s.vel * h;
+    }
+    if (Math.abs(s.pos - target) < 0.0004 && Math.abs(s.vel) < 0.004) {
+      s.pos = target;
+      s.vel = 0;
+      return false;
+    }
+    return true;
   };
 
   let geometry = null;
@@ -957,14 +1004,34 @@ function setupHeroFall() {
   let last = 0;
 
   const measure = () => {
+    // The slab sits exactly under the time card.
+    slabEl.style.left = `${card.offsetLeft}px`;
+    slabEl.style.top = `${card.offsetTop}px`;
+    slabEl.style.width = `${card.offsetWidth}px`;
+    slabEl.style.height = `${card.offsetHeight}px`;
     const projectsBox = docBox(projects);
-    const layerBox = docBox(layer);
+    const ruleBox = docBox(ruleLayer);
     const geoBox = docBox(geo);
+    const bannerBox = docBox(banner);
+    const slabBox = docBox(slabEl);
+    const impact = { x: bannerBox.w * 0.3, y: bannerBox.h * 0.5 };
     geometry = {
       projectsTop: projectsBox.y,
       heroHeight: Math.max(1, hero.offsetHeight),
       // Same clip line as the Projects composition (its heading rule).
-      clipBottom: layerBox.y + layerBox.h - (geoBox.y + geoBox.h),
+      ruleClip: ruleBox.y + ruleBox.h - (geoBox.y + geoBox.h),
+      fallBox: docBox(fallLayer),
+      banner: bannerBox,
+      impact,
+      paintMax: Math.hypot(Math.max(impact.x, bannerBox.w - impact.x), Math.max(impact.y, bannerBox.h - impact.y)),
+      slab: {
+        src: slabBox,
+        tgt: { cx: bannerBox.x + impact.x, cy: bannerBox.y + impact.y, w: slabBox.w, h: slabBox.h },
+        rot: 0,
+        drot: 0,
+        ty: 0,
+        tgtRot: 0,
+      },
       pairs: pairs.map((pair) => ({
         src: docBox(pair.from),
         tgt: docBox(pair.to),
@@ -976,20 +1043,33 @@ function setupHeroFall() {
     };
   };
 
+  const setPainting = (on) => {
+    banner.classList.toggle("is-painting", on);
+    // Hold the banner still while it is painted (no reveal fade / slide).
+    banner.style.opacity = on ? "1" : "";
+    banner.style.translate = on ? "none" : "";
+    banner.style.transition = on ? "none" : "";
+  };
+
   const release = () => {
-    layer.style.clipPath = "";
+    ruleLayer.style.clipPath = "";
+    fallLayer.style.clipPath = "";
     pairs.forEach((pair) => {
-      pair.pos = 0;
-      pair.vel = 0;
-      pair.landed = false;
-      pair.fromFloat = null;
-      pair.toFloat = null;
+      Object.assign(pair, { pos: 0, vel: 0, landed: false, fromFloat: null, toFloat: null });
       pair.from.style.transform = "";
       pair.from.style.opacity = "";
       pair.to.style.opacity = "";
       setDrift(pair.from, true);
       setDrift(pair.to, true);
     });
+    Object.assign(slab, { pos: 0, vel: 0 });
+    Object.assign(splash, { pos: 0, vel: 0 });
+    slabEl.style.transform = "";
+    slabEl.style.opacity = "";
+    drops.forEach((drop) => {
+      drop.style.transform = "";
+    });
+    setPainting(false);
     active = false;
   };
 
@@ -1004,18 +1084,53 @@ function setupHeroFall() {
     };
   };
 
+  // Transform that draws a shape laid out at g.src on its path to g.tgt.
+  // The path runs in viewport space, from where the hero draws the shape
+  // when the turn starts to the target when the turn ends, arcing up and
+  // dropping in; scrolling beyond either end moves it with its page.
+  const pathTransform = (g, s, hf, tf, view, squash = 0) => {
+    const e = s.pos;
+    const eC = clampNumber(e, 0, 1);
+    const fromX = g.src.cx;
+    const fromY = g.src.cy + g.ty * view.heroStart - view.startScroll;
+    const toX = g.tgt.cx + tf.tx;
+    const toY = g.tgt.cy + tf.ty - view.endScroll;
+    const beyond =
+      Math.max(0, view.scrollY - view.endScroll) * eC + Math.min(0, view.scrollY - view.startScroll) * (1 - eC);
+    const x = fromX + (toX - fromX) * e;
+    const y = fromY + (toY - fromY) * e - Math.sin(Math.PI * eC) * view.lift - beyond + view.scrollY;
+    const rotFrom = g.rot + g.drot * view.heroStart;
+    const rotTo = g.tgtRot + tf.r;
+    const tilt = clampNumber(s.vel * 9, -28, 28) * (1 - Math.abs(2 * eC - 1) * 0.4);
+    const rotate = rotFrom + (rotTo - rotFrom) * e + tilt;
+    const sx = Math.max(0.05, 1 + (g.tgt.w / g.src.w - 1) * e) * (1 + squash * 0.3);
+    const sy = Math.max(0.05, 1 + (g.tgt.h / g.src.h - 1) * e) * (1 - squash * 0.5);
+    // A frozen drift still applies before transform; cancel it.
+    return (
+      `rotate(${(-hf.r).toFixed(3)}deg) translate(${(-hf.tx).toFixed(2)}px, ${(-hf.ty).toFixed(2)}px) ` +
+      `translate3d(${(x - g.src.cx).toFixed(2)}px, ${(y - g.src.cy).toFixed(2)}px, 0) ` +
+      `rotate(${rotate.toFixed(3)}deg) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`
+    );
+  };
+
   const render = (startScroll, endScroll) => {
     if (!active) {
       active = true;
-      layer.style.clipPath = `inset(-100vmax -100vmax ${geometry.clipBottom}px -100vmax)`;
+      ruleLayer.style.clipPath = `inset(-100vmax -100vmax ${geometry.ruleClip}px -100vmax)`;
     }
-    const heroStart = clampNumber(startScroll / geometry.heroHeight, 0, 1);
-    const scrollY = window.scrollY;
-    const lift = (window.innerHeight - getHeaderHeight()) * 0.16;
+    const view = {
+      startScroll,
+      endScroll,
+      scrollY: window.scrollY,
+      heroStart: clampNumber(startScroll / geometry.heroHeight, 0, 1),
+      lift: (window.innerHeight - getHeaderHeight()) * 0.16,
+    };
+    const sp = splash.pos;
+    const splashDone = sp === 1 && splash.vel === 0;
 
     pairs.forEach((pair, index) => {
       const g = geometry.pairs[index];
-      const landed = pair.pos === 1 && pair.vel === 0;
+      const landed = pair.pos === 1 && pair.vel === 0 && (!pair.splash || splashDone);
       if (landed !== pair.landed || !pair.fromFloat) {
         pair.landed = landed;
         // Freeze both drifts while flying so the shapes meet exactly.
@@ -1023,7 +1138,6 @@ function setupHeroFall() {
         setDrift(pair.to, landed);
         if (!landed) {
           pair.fromFloat = readFloat(pair.from);
-          pair.toFloat = readFloat(pair.to);
         }
         pair.from.style.opacity = landed ? "0" : "";
         pair.to.style.opacity = landed ? "" : "0";
@@ -1031,35 +1145,60 @@ function setupHeroFall() {
       if (landed) {
         return;
       }
-
-      const e = pair.pos;
-      const eC = clampNumber(e, 0, 1);
-      const hf = pair.fromFloat;
-      const tf = pair.toFloat;
-      // Path in viewport space, from where the hero draws the shape when
-      // the turn starts to the Projects shape (with its frozen drift) when
-      // the turn ends, arcing up and dropping in. Scrolling beyond either
-      // end moves the shape with the page it belongs to.
-      const fromX = g.src.cx;
-      const fromY = g.src.cy + g.ty * heroStart - startScroll;
-      const toX = g.tgt.cx + tf.tx;
-      const toY = g.tgt.cy + tf.ty - endScroll;
-      const beyond =
-        Math.max(0, scrollY - endScroll) * eC + Math.min(0, scrollY - startScroll) * (1 - eC);
-      const x = fromX + (toX - fromX) * e;
-      const y = fromY + (toY - fromY) * e - Math.sin(Math.PI * eC) * lift - beyond + scrollY;
-      const rotFrom = g.rot + g.drot * heroStart;
-      const rotTo = g.tgtRot + tf.r;
-      const tilt = clampNumber(pair.vel * 9, -28, 28) * (1 - Math.abs(2 * eC - 1) * 0.4);
-      const rotate = rotFrom + (rotTo - rotFrom) * e + tilt;
-      const sx = Math.max(0.05, 1 + (g.tgt.w / g.src.w - 1) * e);
-      const sy = Math.max(0.05, 1 + (g.tgt.h / g.src.h - 1) * e);
-      // The frozen hero drift still applies before transform; cancel it.
-      pair.from.style.transform =
-        `rotate(${(-hf.r).toFixed(3)}deg) translate(${(-hf.tx).toFixed(2)}px, ${(-hf.ty).toFixed(2)}px) ` +
-        `translate3d(${(x - g.src.cx).toFixed(2)}px, ${(y - g.src.cy).toFixed(2)}px, 0) ` +
-        `rotate(${rotate.toFixed(3)}deg) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`;
+      pair.toFloat = readFloat(pair.to);
+      pair.from.style.transform = pathTransform(g, pair, pair.fromFloat, pair.toFloat, view);
+      if (pair.splash) {
+        // The banner's red mark is slightly translucent.
+        pair.from.style.opacity = (1 - 0.08 * clampNumber(pair.pos, 0, 1)).toFixed(3);
+      }
     });
+
+    // Slab: falls onto the banner, squashes on impact and melts into the paint.
+    const squash = Math.sin(Math.PI * clampNumber(sp / 0.5, 0, 1));
+    slabEl.style.opacity = slab.pos > 0 ? (1 - clampNumber((sp - 0.12) / 0.3, 0, 1)).toFixed(3) : "0";
+    slabEl.style.transform = pathTransform(geometry.slab, slab, zero, zero, view, squash);
+
+    // Paint: a splash grows from the impact point into the banner's ground;
+    // droplets fly out ahead of it and are swallowed as it spreads.
+    const painting = slab.pos > 0 && !(splashDone && mark.landed);
+    if (banner.classList.contains("is-painting") !== painting) {
+      setPainting(painting);
+    }
+    if (painting) {
+      const { impact, paintMax, banner: bb } = geometry;
+      const r0 = geometry.slab.src.h * 0.45;
+      const grow = Math.pow(clampNumber(sp, 0, 1.2), 1.5);
+      banner.style.setProperty("--paint-x", `${impact.x}px`);
+      banner.style.setProperty("--paint-y", `${impact.y}px`);
+      banner.style.setProperty("--paint-r", `${sp > 0 ? (r0 + (paintMax - r0) * grow).toFixed(1) : 0}px`);
+      banner.style.setProperty("--ink-in", clampNumber((sp - 0.5) / 0.4, 0, 1).toFixed(3));
+      drops.forEach((drop, index) => {
+        const [angle, reach, size] = paintDrops[index];
+        const q = clampNumber(sp * 1.8, 0, 1.15);
+        const travel = 1 - Math.pow(1 - clampNumber(q, 0, 1), 3) + (q > 1 ? q - 1 : 0);
+        const rad = (angle * Math.PI) / 180;
+        const d = size * bb.h;
+        const x = impact.x + Math.cos(rad) * reach * bb.w * travel;
+        const y = impact.y + Math.sin(rad) * reach * bb.w * travel * 0.45;
+        drop.style.width = `${d.toFixed(1)}px`;
+        drop.style.height = `${d.toFixed(1)}px`;
+        drop.style.transform = `translate(${(x - d / 2).toFixed(1)}px, ${(y - d / 2).toFixed(1)}px) scale(${sp > 0.01 ? 1 : 0})`;
+      });
+    }
+
+    // The red square sinks into the paint: as the splash spreads and the
+    // square settles, its layer's clip closes onto the banner box.
+    const close = clampNumber(sp, 0, 1) * clampNumber((mark.pos - 0.85) / 0.15, 0, 1);
+    if (close > 0 && !mark.landed) {
+      const fb = geometry.fallBox;
+      const bb = geometry.banner;
+      const pad = 420 * (1 - close);
+      fallLayer.style.clipPath =
+        `inset(${(bb.y - pad - fb.y).toFixed(1)}px ${(fb.x + fb.w - (bb.x + bb.w) - pad).toFixed(1)}px ` +
+        `${(fb.y + fb.h - (bb.y + bb.h) - pad).toFixed(1)}px ${(bb.x - pad - fb.x).toFixed(1)}px)`;
+    } else {
+      fallLayer.style.clipPath = "";
+    }
   };
 
   const tick = (now) => {
@@ -1080,21 +1219,10 @@ function setupHeroFall() {
     const { startScroll, endScroll, p } = progressNow();
     let moving = false;
 
-    pairs.forEach((pair) => {
-      const target = clampNumber((p - pair.start) / (1 - pair.start), 0, 1);
-      const steps = Math.max(1, Math.ceil(dt * 240));
-      const h = dt / steps;
-      for (let i = 0; i < steps; i += 1) {
-        pair.vel += (-pair.k * (pair.pos - target) - pair.c * pair.vel) * h;
-        pair.pos += pair.vel * h;
-      }
-      if (Math.abs(pair.pos - target) < 0.0004 && Math.abs(pair.vel) < 0.004) {
-        pair.pos = target;
-        pair.vel = 0;
-      } else {
-        moving = true;
-      }
+    [...pairs, slab].forEach((s) => {
+      moving = step(s, clampNumber((p - s.start) / (1 - s.start), 0, 1), dt) || moving;
     });
+    moving = step(splash, slab.pos > 0.96 ? 1 : 0, dt) || moving;
 
     if (!moving && p <= 0) {
       if (active) {
@@ -1129,6 +1257,7 @@ function setupHeroFall() {
     const observer = new ResizeObserver(remeasure);
     observer.observe(hero);
     observer.observe(projects.querySelector(".section-head") || projects);
+    observer.observe(banner);
   }
   window.addEventListener("load", remeasure);
   queue();

@@ -823,6 +823,16 @@ main {
   background: var(--yellow);
 }
 
+/* Falling slab (script.js): parked exactly under the time card, shown only
+   while it falls into the studio banner. */
+.fall-slab {
+  position: absolute;
+  display: block;
+  background: var(--ink);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
 /* Metrics ------------------------------------------------------------------ */
 
 .section-grid {
@@ -1285,6 +1295,40 @@ main {
   opacity: 0.92;
   rotate: 18deg;
   transition: rotate 1200ms var(--ease), translate 1200ms var(--ease);
+}
+
+/* Painted in by the falling slab (script.js): the black ground spreads
+   from the impact point, droplets ahead of it; the text fades in last. */
+.featured-project.is-painting {
+  background: transparent;
+}
+
+.featured-project.is-painting::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--ink);
+  clip-path: circle(var(--paint-r, 0px) at var(--paint-x, 30%) var(--paint-y, 50%));
+}
+
+.featured-project.is-painting > :not(.supre-mark, .paint-drop) {
+  opacity: var(--ink-in, 0);
+}
+
+.featured-project > .paint-drop {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  left: 0;
+  display: none;
+  border-radius: 50%;
+  background: var(--ink);
+  pointer-events: none;
+}
+
+.featured-project.is-painting > .paint-drop {
+  display: block;
 }
 
 .featured-project.is-inview .supre-mark {
