@@ -845,6 +845,13 @@ main {
   pointer-events: none;
 }
 
+/* Page shapes held by a morph (script.js): hidden, drift frozen. */
+.g.morph-out,
+.g.morph-in {
+  visibility: hidden;
+  animation-play-state: paused !important;
+}
+
 .morph-shape {
   position: absolute;
   display: block;

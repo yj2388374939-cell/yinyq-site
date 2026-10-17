@@ -1068,6 +1068,7 @@ function setupHeroFall() {
       pair.from.style.transform = "";
       pair.from.style.opacity = "";
       pair.to.style.opacity = "";
+      pair.to.classList.remove("morph-in");
       setDrift(pair.from, true);
       setDrift(pair.to, true);
     });
@@ -1154,6 +1155,8 @@ function setupHeroFall() {
         }
         pair.from.style.opacity = landed ? "0" : "";
         pair.to.style.opacity = landed ? "" : "0";
+        // Lets the Projects → Experience morph wait for the landing.
+        pair.to.classList.toggle("morph-in", !landed);
       }
       if (landed) {
         return;
@@ -1233,7 +1236,15 @@ function setupHeroFall() {
     let moving = false;
 
     [...pairs, slab].forEach((s) => {
-      moving = step(s, clampNumber((p - s.start) / (1 - s.start), 0, 1), dt) || moving;
+      const target = clampNumber((p - s.start) / (1 - s.start), 0, 1);
+      if (s.to?.classList.contains("morph-out")) {
+        // The Projects → Experience morph holds this shape: stay landed
+        // until it gives it back.
+        Object.assign(s, { pos: 1, vel: 0 });
+        moving = moving || target < 1;
+        return;
+      }
+      moving = step(s, target, dt) || moving;
     });
     moving = step(splash, slab.pos > 0.96 ? 1 : 0, dt) || moving;
 
@@ -1370,8 +1381,13 @@ function setupPageMorph({ from, to, pairs: pairConfig }) {
     return { tx: tx || 0, ty: ty || 0, r };
   };
   const readNum = (el, name) => parseFloat(getComputedStyle(el).getPropertyValue(name)) || 0;
-  const setDrift = (el, running) => {
-    el.style.animationPlayState = running ? "" : "paused";
+  // A shape can leave one morph and arrive by another (the Experience
+  // shapes do both), so each role has its own class: .morph-out while it
+  // is the source of an active morph, .morph-in while it is a target not
+  // yet landed. Either one hides it and freezes its drift (styles.css);
+  // it shows only when no morph holds it.
+  const hold = (el, role, on) => {
+    el.classList.toggle(role, on);
   };
   const smooth = (v) => v * v * (3 - 2 * v);
 
@@ -1407,6 +1423,7 @@ function setupPageMorph({ from, to, pairs: pairConfig }) {
       const clone = document.createElement("span");
       clone.className = "morph-shape";
       Object.assign(clone.style, {
+        visibility: "hidden",
         left: `${g.src.x}px`,
         top: `${g.src.y}px`,
         width: `${g.src.w}px`,
@@ -1424,10 +1441,8 @@ function setupPageMorph({ from, to, pairs: pairConfig }) {
     layer.style.clipPath = "";
     pairs.forEach((pair) => {
       Object.assign(pair, { pos: 0, vel: 0, clone: null, landed: false, fresh: true, fromFloat: null });
-      pair.from.style.visibility = "";
-      pair.to.style.visibility = "";
-      setDrift(pair.from, true);
-      setDrift(pair.to, true);
+      hold(pair.from, "morph-out", false);
+      hold(pair.to, "morph-in", false);
     });
     active = false;
   };
@@ -1458,20 +1473,18 @@ function setupPageMorph({ from, to, pairs: pairConfig }) {
     pairs.forEach((pair, index) => {
       const g = geometry.pairs[index];
       const landed = pair.pos === 1 && pair.vel === 0;
-      if (!pair.fromFloat) {
-        // Freeze the source drift; the clone starts exactly on it.
-        setDrift(pair.from, false);
-        setDrift(pair.to, false);
-        pair.fromFloat = readFloat(pair.from);
-        pair.from.style.visibility = "hidden";
+      if (pair.waiting && !pair.fromFloat) {
+        return;
       }
-      // Visibility and drift are written only when the state changes, so a
-      // neighbouring morph that shares these shapes is not overridden.
+      if (!pair.fromFloat) {
+        // Freeze and hide the source; the clone starts exactly on it.
+        hold(pair.from, "morph-out", true);
+        pair.fromFloat = readFloat(pair.from);
+      }
       if (landed !== pair.landed || pair.fresh !== false) {
         pair.fresh = false;
         pair.landed = landed;
-        setDrift(pair.to, landed);
-        pair.to.style.visibility = landed ? "" : "hidden";
+        hold(pair.to, "morph-in", !landed);
         pair.clone.style.visibility = landed ? "hidden" : "";
       }
       const tf = readFloat(pair.to);
@@ -1536,6 +1549,20 @@ function setupPageMorph({ from, to, pairs: pairConfig }) {
     let moving = false;
     pairs.forEach((pair) => {
       const target = clampNumber((view.p - pair.start) / (1 - pair.start), 0, 1);
+      // A shared shape is handed over, never drawn twice: wait while the
+      // previous move is still landing on our source, or while the next
+      // move still holds our target.
+      if (!pair.fromFloat && pair.from.classList.contains("morph-in")) {
+        Object.assign(pair, { pos: 0, vel: 0, waiting: true });
+        moving = moving || target > 0;
+        return;
+      }
+      if (pair.to.classList.contains("morph-out")) {
+        Object.assign(pair, { pos: 1, vel: 0, waiting: true });
+        moving = moving || target < 1;
+        return;
+      }
+      pair.waiting = false;
       const steps = Math.max(1, Math.ceil(dt * 240));
       const h = dt / steps;
       for (let i = 0; i < steps; i += 1) {
