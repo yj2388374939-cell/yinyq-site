@@ -2419,6 +2419,79 @@ main {
   }
 }
 
+/* Skills counterweight --------------------------------------------------------- */
+/* A Suprematist group in the free space under the timeline. script.js sets
+   its height (--weight-h) to the room left and adds .is-off when there is
+   too little; --leave (0 → 1 while the contact page slides in) sends the
+   shapes down into the contact page, where the matching shapes take over. */
+.skills-weight {
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  right: 0;
+  bottom: clamp(12px, 2svh, 28px);
+  height: var(--weight-h, 0px);
+  pointer-events: none;
+  transition: opacity 400ms ease;
+}
+
+.skills-weight.is-off {
+  opacity: 0;
+}
+
+.sw {
+  position: absolute;
+  display: block;
+  transform: rotate(var(--r, 0deg));
+  will-change: transform;
+}
+
+.sw-line {
+  --r: -3deg;
+  left: -2%;
+  right: 18%;
+  top: 58%;
+  height: 2px;
+  background: var(--ink);
+}
+
+.sw-slab {
+  --r: -7deg;
+  left: 2%;
+  bottom: 18%;
+  width: 36%;
+  height: max(12px, 13%);
+  background: var(--ink);
+}
+
+.sw-tick {
+  --r: -7deg;
+  left: 30%;
+  bottom: 34%;
+  width: 9%;
+  height: max(6px, 5%);
+  background: var(--blue);
+}
+
+/* Lines up with the contact page's yellow circle (right: 34%). */
+.sw-disc {
+  right: 32%;
+  top: 4%;
+  height: min(78%, 170px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--yellow);
+}
+
+.sw-chip {
+  --r: 16deg;
+  right: 6%;
+  bottom: 6%;
+  height: min(42%, 96px);
+  aspect-ratio: 1;
+  background: var(--red);
+}
+
 /* Contact -------------------------------------------------------------------- */
 
 .contact-section {
@@ -3119,22 +3192,58 @@ main {
     opacity: 1;
   }
 
-  .motion .contact-section .c-square {
-    transition: rotate 1600ms var(--ease) 300ms;
-    rotate: 60deg;
+  /* Skills → contact handoff, linked to scroll (reverses when scrolling
+     back). Skills shapes sink toward the contact page and slip behind its
+     edge; the contact shapes drop and turn in from that same edge: the
+     yellow disc becomes the yellow circle, the black slab the black square. */
+  .motion .sw {
+    transform:
+      translate3d(calc(var(--leave, 0) * var(--lx, 0px)), calc(var(--leave, 0) * var(--ly, 0px)), 0)
+      rotate(calc(var(--r, 0deg) + var(--leave, 0) * var(--lr, 0deg)))
+      scale(calc(1 + var(--leave, 0) * var(--ls, 0)));
   }
 
-  .motion .contact-section.is-inview .c-square {
-    rotate: 14deg;
+  .motion .sw-line {
+    --lx: -24vw;
   }
 
-  .motion .contact-section .c-bar {
-    translate: 100% 0;
-    transition: translate 1100ms var(--ease) 500ms;
+  .motion .sw-slab {
+    --lx: 34vw;
+    --ly: 34svh;
+    --lr: 22deg;
   }
 
-  .motion .contact-section.is-inview .c-bar {
-    translate: 0 0;
+  .motion .sw-tick {
+    --lx: 18vw;
+    --ly: 40svh;
+    --lr: -30deg;
+  }
+
+  .motion .sw-disc {
+    --ly: 48svh;
+    --ls: 0.25;
+  }
+
+  .motion .sw-chip {
+    --ly: 52svh;
+    --lr: 120deg;
+  }
+
+  .motion .contact-section {
+    --enter: 1;
+  }
+
+  .motion .supre-contact .c-square {
+    transform: translate3d(calc((1 - var(--enter)) * -22vw), calc((1 - var(--enter)) * -38svh), 0);
+    rotate: calc(14deg - (1 - var(--enter)) * 30deg);
+  }
+
+  .motion .supre-contact .c-bar {
+    translate: calc((1 - var(--enter)) * 100%) 0;
+  }
+
+  .motion .supre-contact .c-circle {
+    transform: translateY(calc((1 - var(--enter)) * -46svh)) scale(calc(1.25 - var(--enter) * 0.25));
   }
 
   /* Music: slow pulse while the BGM is audible */
@@ -3771,6 +3880,10 @@ main {
     transform: rotate(var(--rot, 0deg));
   }
 
+  .sw {
+    transform: rotate(var(--r, 0deg));
+  }
+
   .g {
     --k: 0;
   }
@@ -3792,6 +3905,7 @@ main {
   .supre,
   .supre-mark,
   .page-geo,
+  .skills-weight,
   .bgm-guide,
   .bgm-page-guide,
   .site-footer,

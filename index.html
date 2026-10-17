@@ -42,7 +42,7 @@
         document.documentElement.classList.add("motion");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=20261017-donguri" />
+    <link rel="stylesheet" href="styles.css?v=20261017-weight" />
   </head>
   <body>
     <header class="site-header">
@@ -1013,6 +1013,16 @@
             </div>
           </div>
         </div>
+
+        <!-- Counterweight: fills the free space under the timeline (height set
+             by script.js) and hands off into the contact page on scroll. -->
+        <div class="skills-weight" aria-hidden="true">
+          <span class="sw sw-line"></span>
+          <span class="sw sw-slab"></span>
+          <span class="sw sw-tick"></span>
+          <span class="sw sw-disc"></span>
+          <span class="sw sw-chip"></span>
+        </div>
       </section>
 
       <section class="contact-section" id="contact" data-reveal>
@@ -1038,6 +1048,6 @@
 
     <div class="toast" role="status" aria-live="polite" hidden></div>
 
-    <script src="script.js?v=20261017-donguri"></script>
+    <script src="script.js?v=20261017-weight"></script>
   </body>
 </html>

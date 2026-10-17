@@ -821,6 +821,10 @@ function setupBgmGuide() {
 function setupScrollState() {
   const hero = document.querySelector(".hero");
   const geoPages = [...document.querySelectorAll(".content-section")];
+  const skills = document.getElementById("skills");
+  const contact = document.getElementById("contact");
+  const weight = document.querySelector(".skills-weight");
+  const weightAnchor = document.querySelector(".edu-axis");
   let frame = 0;
 
   const update = () => {
@@ -842,6 +846,23 @@ function setupScrollState() {
       page.style.setProperty("--enter", enter.toFixed(3));
     });
 
+    // Skills → contact handoff: the contact page's own entry progress drives
+    // both pages (--enter on contact, --leave on skills).
+    if (contact && skills) {
+      const handoff = clampNumber((1 - (contact.getBoundingClientRect().top - headerH) / span) / 0.97, 0, 1);
+      contact.style.setProperty("--enter", handoff.toFixed(3));
+      skills.style.setProperty("--leave", handoff.toFixed(3));
+    }
+
+    // Counterweight fills whatever space is left under the timeline; it
+    // hides when there is too little room, so it never covers content.
+    if (weight && weightAnchor && skills) {
+      const free = skills.getBoundingClientRect().bottom - weightAnchor.getBoundingClientRect().bottom - 28;
+      const height = Math.min(free, window.innerHeight * 0.42);
+      weight.style.setProperty("--weight-h", `${Math.max(0, Math.round(height))}px`);
+      weight.classList.toggle("is-off", height < 72);
+    }
+
     if (scrollY > window.innerHeight * 0.5 && bgmPageGuideShown && !bgmPageGuideDismissed) {
       dismissBgmPageGuide();
     }
@@ -855,6 +876,11 @@ function setupScrollState() {
 
   window.addEventListener("scroll", queue, { passive: true });
   window.addEventListener("resize", queue);
+  // Content height changes (language switch, fonts, images) move the free
+  // space under the timeline; re-measure when the skills page resizes.
+  if (skills && "ResizeObserver" in window) {
+    new ResizeObserver(queue).observe(skills.querySelector(".skill-columns") || skills);
+  }
   update();
 
   // Re-anchor deep links (e.g. /#contact) once the masonry has settled.
