@@ -1276,6 +1276,319 @@ function setupHeroFall() {
   queue();
 }
 
+// Projects → Experience morph: as the Experience page slides in, the
+// Projects composition re-forms into the Experience "Supremus" stack. The
+// black square flattens into the top bar, the red diagonal thickens into
+// the red block, the hairline into the black line; the blue disc is
+// reshaped like dragging Illustrator's live-corner widgets (its corners
+// sharpen one by one, widgets shown) into the blue square that sinks into
+// the heading rule. The yellow block keeps its own entry. Shapes fly as
+// clones in a document-space layer (no page clips in the way), clipped at
+// the heading rule, which stays put on screen through the turn. Springs as
+// in the hero fall; reverses on scroll back. Desktop with motion only.
+const morphPairs = [
+  // from, to, window start, stiffness, damping ratio, extra
+  [".geo-projects .g-sq", ".geo-experience .g-s1", 0, 150, 0.78],
+  [".geo-projects .g-bar", ".geo-experience .g-s2", 0.06, 160, 0.76],
+  [".geo-projects .g-line", ".geo-experience .g-s3", 0.1, 140, 0.8],
+  [".geo-projects .g-dot", ".geo-experience .g-s5", 0.14, 120, 0.85, { corners: true, spin: 90 }],
+];
+
+function setupPageMorph() {
+  const fromPage = document.getElementById("projects");
+  const toPage = document.getElementById("experience");
+  const fromGeo = document.querySelector(".geo-projects");
+  const toGeo = document.querySelector(".geo-experience");
+  if (!fromPage || !toPage || !fromGeo || !toGeo) {
+    return;
+  }
+
+  const layer = document.createElement("div");
+  layer.className = "morph-layer";
+  layer.setAttribute("aria-hidden", "true");
+  document.body.appendChild(layer);
+
+  const pairs = morphPairs
+    .map(([from, to, start, stiffness, zeta, extra = {}]) => ({
+      from: document.querySelector(from),
+      to: document.querySelector(to),
+      start,
+      k: stiffness,
+      c: 2 * zeta * Math.sqrt(stiffness),
+      pos: 0,
+      vel: 0,
+      ...extra,
+      clone: null,
+      widgets: [],
+      landed: false,
+      fromFloat: null,
+    }))
+    .filter((pair) => pair.from && pair.to);
+  if (pairs.length !== morphPairs.length) {
+    return;
+  }
+
+  const docBox = (el) => {
+    let x = 0;
+    let y = 0;
+    for (let node = el; node; node = node.offsetParent) {
+      x += node.offsetLeft;
+      y += node.offsetTop;
+    }
+    return { x, y, cx: x + el.offsetWidth / 2, cy: y + el.offsetHeight / 2, w: el.offsetWidth, h: el.offsetHeight };
+  };
+  const readFloat = (el) => {
+    const style = getComputedStyle(el);
+    const [tx = 0, ty = 0] =
+      style.translate === "none"
+        ? []
+        : style.translate
+            .split(" ")
+            .map((v, i) => (v.endsWith("%") ? (parseFloat(v) / 100) * (i ? el.offsetHeight : el.offsetWidth) : parseFloat(v)));
+    const r = style.rotate === "none" ? 0 : parseFloat(style.rotate) || 0;
+    return { tx: tx || 0, ty: ty || 0, r };
+  };
+  const readNum = (el, name) => parseFloat(getComputedStyle(el).getPropertyValue(name)) || 0;
+  const setDrift = (el, running) => {
+    el.style.animationPlayState = running ? "" : "paused";
+  };
+  const smooth = (v) => v * v * (3 - 2 * v);
+
+  let geometry = null;
+  let active = false;
+  let frame = 0;
+  let last = 0;
+
+  const measure = () => {
+    const fromBox = docBox(fromPage);
+    const toBox = docBox(toPage);
+    const fromGeoBox = docBox(fromGeo);
+    const toGeoBox = docBox(toGeo);
+    geometry = {
+      fromTop: fromBox.y,
+      toTop: toBox.y,
+      fromRule: fromGeoBox.y + fromGeoBox.h,
+      toRule: toGeoBox.y + toGeoBox.h,
+      pairs: pairs.map((pair) => ({
+        src: docBox(pair.from),
+        tgt: docBox(pair.to),
+        rot: readNum(pair.from, "--r"),
+        tgtRot: readNum(pair.to, "--r"),
+        bg: getComputedStyle(pair.from).backgroundColor,
+        tgtBg: getComputedStyle(pair.to).backgroundColor,
+      })),
+    };
+  };
+
+  const build = () => {
+    pairs.forEach((pair, index) => {
+      const g = geometry.pairs[index];
+      const clone = document.createElement("span");
+      clone.className = "morph-shape";
+      Object.assign(clone.style, {
+        left: `${g.src.x}px`,
+        top: `${g.src.y}px`,
+        width: `${g.src.w}px`,
+        height: `${g.src.h}px`,
+        background: g.bg,
+        borderRadius: getComputedStyle(pair.from).borderRadius,
+      });
+      if (pair.corners) {
+        // Live-corner widgets, one per corner.
+        pair.widgets = [0, 1, 2, 3].map(() => {
+          const widget = document.createElement("i");
+          widget.className = "morph-widget";
+          clone.appendChild(widget);
+          return widget;
+        });
+        const box = document.createElement("b");
+        box.className = "morph-bounds";
+        clone.appendChild(box);
+        pair.bounds = box;
+      }
+      layer.appendChild(clone);
+      pair.clone = clone;
+    });
+  };
+
+  const release = () => {
+    layer.replaceChildren();
+    layer.style.clipPath = "";
+    pairs.forEach((pair) => {
+      Object.assign(pair, { pos: 0, vel: 0, clone: null, widgets: [], bounds: null, landed: false, fromFloat: null });
+      pair.from.style.visibility = "";
+      pair.to.style.visibility = "";
+      setDrift(pair.from, true);
+      setDrift(pair.to, true);
+    });
+    active = false;
+  };
+
+  const range = () => {
+    const headerH = getHeaderHeight();
+    const startScroll = geometry.fromTop - headerH;
+    const endScroll = geometry.toTop - headerH;
+    return {
+      startScroll,
+      endScroll,
+      p: clampNumber((window.scrollY - startScroll) / Math.max(1, endScroll - startScroll) / 0.99, 0, 1),
+    };
+  };
+
+  const render = ({ startScroll, endScroll, p }) => {
+    const scrollY = window.scrollY;
+    if (!active) {
+      active = true;
+      build();
+    }
+    // Clip at the heading rule: the Projects rule at the start, the
+    // Experience rule at the end (the same place on screen).
+    const ruleView =
+      geometry.fromRule - startScroll + (geometry.toRule - endScroll - (geometry.fromRule - startScroll)) * p;
+    layer.style.clipPath = `inset(-100vmax -100vmax ${(-(ruleView + scrollY)).toFixed(1)}px -100vmax)`;
+
+    pairs.forEach((pair, index) => {
+      const g = geometry.pairs[index];
+      const landed = pair.pos === 1 && pair.vel === 0;
+      if (!pair.fromFloat) {
+        // Freeze the source drift; the clone starts exactly on it.
+        setDrift(pair.from, false);
+        setDrift(pair.to, false);
+        pair.fromFloat = readFloat(pair.from);
+        pair.from.style.visibility = "hidden";
+      }
+      if (landed !== pair.landed) {
+        pair.landed = landed;
+        setDrift(pair.to, landed);
+      }
+      const tf = readFloat(pair.to);
+      pair.to.style.visibility = landed ? "" : "hidden";
+      pair.clone.style.visibility = landed ? "hidden" : "";
+      if (landed) {
+        return;
+      }
+      const e = pair.pos;
+      const eC = clampNumber(e, 0, 1);
+      const hf = pair.fromFloat;
+      // Viewport path from the Projects shape (turn start) to the
+      // Experience shape (turn end); beyond either end it rides its page.
+      const fromX = g.src.cx + hf.tx;
+      const fromY = g.src.cy + hf.ty - startScroll;
+      const toX = g.tgt.cx + tf.tx;
+      const toY = g.tgt.cy + tf.ty - endScroll;
+      const beyond =
+        Math.max(0, scrollY - endScroll) * eC + Math.min(0, scrollY - startScroll) * (1 - eC);
+      const x = fromX + (toX - fromX) * e;
+      const y = fromY + (toY - fromY) * e - beyond + scrollY;
+      const rotFrom = g.rot + hf.r;
+      const rotTo = g.tgtRot + tf.r + (pair.spin || 0);
+      const tilt = clampNumber(pair.vel * 7, -20, 20) * (1 - Math.abs(2 * eC - 1) * 0.4);
+      // A spin of a multiple of 90deg lands a square on the same pose.
+      const rotate = rotFrom + (rotTo - rotFrom) * e + tilt;
+      const sx = Math.max(0.02, 1 + (g.tgt.w / g.src.w - 1) * e);
+      const sy = Math.max(0.02, 1 + (g.tgt.h / g.src.h - 1) * e);
+      pair.clone.style.transform =
+        `translate3d(${(x - g.src.cx).toFixed(2)}px, ${(y - g.src.cy).toFixed(2)}px, 0) ` +
+        `rotate(${rotate.toFixed(3)}deg) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`;
+      if (g.bg !== g.tgtBg) {
+        pair.clone.style.background = eC < 0.5 ? g.bg : g.tgtBg;
+      }
+
+      if (pair.corners) {
+        // Circle → square: each corner's radius is dragged in turn.
+        const m = clampNumber((e - 0.12) / 0.7, 0, 1);
+        const radii = [0, 1, 2, 3].map((i) => 50 * (1 - smooth(clampNumber((m - i * 0.14) / 0.58, 0, 1))));
+        pair.clone.style.borderRadius = radii.map((r) => `${r.toFixed(2)}%`).join(" ");
+        const show = m > 0 && m < 1 ? Math.sin(Math.PI * m) : 0;
+        const w = g.src.w;
+        // Widgets sit inside each corner, on the arc's diagonal.
+        const spots = [
+          [1, 1],
+          [-1, 1],
+          [-1, -1],
+          [1, -1],
+        ];
+        pair.widgets.forEach((widget, i) => {
+          const inset = (radii[i] / 100) * w * 0.42 + 4;
+          const [dx, dy] = spots[i];
+          const left = dx > 0 ? inset : w - inset;
+          const top = dy > 0 ? inset : w - inset;
+          widget.style.transform = `translate(${left.toFixed(1)}px, ${top.toFixed(1)}px) scale(${(1 / sx).toFixed(3)})`;
+          widget.style.opacity = show.toFixed(3);
+        });
+        pair.bounds.style.opacity = show.toFixed(3);
+      }
+    });
+  };
+
+  const tick = (now) => {
+    frame = 0;
+    if (!fallQuery.matches || motionQuery.matches) {
+      if (active) {
+        release();
+      }
+      last = 0;
+      return;
+    }
+    if (!geometry) {
+      measure();
+    }
+    const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
+    last = now;
+    const view = range();
+    let moving = false;
+    pairs.forEach((pair) => {
+      const target = clampNumber((view.p - pair.start) / (1 - pair.start), 0, 1);
+      const steps = Math.max(1, Math.ceil(dt * 240));
+      const h = dt / steps;
+      for (let i = 0; i < steps; i += 1) {
+        pair.vel += (-pair.k * (pair.pos - target) - pair.c * pair.vel) * h;
+        pair.pos += pair.vel * h;
+      }
+      if (Math.abs(pair.pos - target) < 0.0004 && Math.abs(pair.vel) < 0.004) {
+        pair.pos = target;
+        pair.vel = 0;
+      } else {
+        moving = true;
+      }
+    });
+
+    if (!moving && view.p <= 0) {
+      if (active) {
+        release();
+      }
+    } else {
+      render(view);
+    }
+
+    if (moving) {
+      frame = window.requestAnimationFrame(tick);
+    } else {
+      last = 0;
+    }
+  };
+
+  const queue = () => {
+    if (!frame) {
+      frame = window.requestAnimationFrame(tick);
+    }
+  };
+  const remeasure = () => {
+    geometry = null;
+    if (active) {
+      release();
+    }
+    queue();
+  };
+
+  window.addEventListener("scroll", queue, { passive: true });
+  window.addEventListener("resize", remeasure);
+  fallQuery.addEventListener?.("change", remeasure);
+  motionQuery.addEventListener?.("change", remeasure);
+  window.addEventListener("load", remeasure);
+  queue();
+}
+
 function getHeaderHeight() {
   return document.querySelector(".site-header")?.offsetHeight || 0;
 }
@@ -2128,6 +2441,7 @@ applyLanguage(readStorage("resume-language") || "zh");
 setupGallery();
 setupScrollState();
 setupHeroFall();
+setupPageMorph();
 setupPaging();
 setupReveal();
 setupScrollSpy();
