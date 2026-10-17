@@ -92,3 +92,20 @@ jobs:
             echo "::error title=OSS sync failed::exit ${status}: ${reason}"
             exit "$status"
           fi
+
+      - name: Make browsers revalidate HTML
+        # Pages must always pick up the current asset versions (?v=…), so
+        # HTML is served with no-cache (revalidate on every visit, a cheap
+        # 304 when unchanged). Assets keep default caching: their URLs
+        # change with each release. Non-fatal: the mirror is already live.
+        if: steps.config.outputs.ready == 'true'
+        continue-on-error: true
+        env:
+          OSS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
+          OSS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+        run: |
+          OSS_KEY_ID="$(printf '%s' "$OSS_KEY_ID" | tr -d '[:space:]')"
+          OSS_KEY_SECRET="$(printf '%s' "$OSS_KEY_SECRET" | tr -d '[:space:]')"
+          ossutil set-meta "oss://${OSS_BUCKET}/" "Cache-Control:no-cache" --update -r -f --include "*.html" \
+            -e "oss-${OSS_REGION}.aliyuncs.com" -i "$OSS_KEY_ID" -k "$OSS_KEY_SECRET" \
+            || { echo "::warning title=Cache header not set::HTML Cache-Control could not be updated"; exit 1; }
