@@ -1142,9 +1142,12 @@ function setupHeroFall() {
     const sp = splash.pos;
     const splashDone = sp === 1 && splash.vel === 0;
 
+    // The four heading shapes hand over together (see the page morphs);
+    // the red square waits for the paint instead.
+    const headingLanded = pairs.every((pair) => pair.splash || (pair.pos === 1 && pair.vel === 0));
     pairs.forEach((pair, index) => {
       const g = geometry.pairs[index];
-      const landed = pair.pos === 1 && pair.vel === 0 && (!pair.splash || splashDone);
+      const landed = pair.splash ? pair.pos === 1 && pair.vel === 0 && splashDone : headingLanded;
       if (landed !== pair.landed || !pair.fromFloat) {
         pair.landed = landed;
         // Freeze both drifts while flying so the shapes meet exactly.
@@ -1476,6 +1479,18 @@ function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
       pair.clone = clone;
       pair.base = g.src;
     });
+    // Clones stack like the shapes they stand for: in the source page's
+    // order for the first half of the flight, the target page's after.
+    const rank = (key) => {
+      const live = pairs.filter((pair) => pair.clone);
+      live
+        .sort((a, b) => (a[key].compareDocumentPosition(b[key]) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1))
+        .forEach((pair, i) => {
+          pair[`${key}Rank`] = i + 1;
+        });
+    };
+    rank("from");
+    rank("to");
   };
 
   const release = () => {
@@ -1526,12 +1541,16 @@ function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
     const ruleView = geometry.fromRule - startScroll + (toRuleView - (geometry.fromRule - startScroll)) * p;
     layer.style.clipPath = `inset(-100vmax -100vmax ${(-(ruleView + scrollY)).toFixed(1)}px -100vmax)`;
 
+    // The move hands over as one: real shapes return only once every
+    // shape has settled, so a landed shape never ends up under (or over) a
+    // clone that is still flying.
+    const groupLanded = pairs.every((pair) => pair.inert || (pair.pos === 1 && pair.vel === 0));
     pairs.forEach((pair, index) => {
       const g = geometry.pairs[index];
       if (!g) {
         return;
       }
-      const landed = pair.pos === 1 && pair.vel === 0;
+      const landed = groupLanded;
       if (pair.waiting && !pair.fromFloat) {
         return;
       }
@@ -1577,6 +1596,7 @@ function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
       pair.clone.style.transform =
         `translate3d(${(x - base.cx).toFixed(2)}px, ${(y - base.cy).toFixed(2)}px, 0) ` +
         `rotate(${rotate.toFixed(3)}deg) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`;
+      pair.clone.style.zIndex = String(eC < 0.5 ? pair.fromRank : pair.toRank);
       if (g.bg !== g.tgtBg) {
         pair.clone.style.background = eC < 0.5 ? g.bg : g.tgtBg;
       }
