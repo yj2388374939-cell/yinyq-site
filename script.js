@@ -1279,10 +1279,9 @@ function setupHeroFall() {
 // Projects → Experience morph: as the Experience page slides in, the
 // Projects composition re-forms into the Experience "Supremus" stack. The
 // black square flattens into the top bar, the red diagonal thickens into
-// the red block, the hairline into the black line; the blue disc is
-// reshaped like dragging Illustrator's live-corner widgets (its corners
-// sharpen one by one, widgets shown) into the blue square that sinks into
-// the heading rule. The yellow block keeps its own entry. Shapes fly as
+// the red block, the hairline into the black line; the blue disc's corners
+// are pulled square one by one (like dragging live corners) into the blue
+// square that sinks into the heading rule. The yellow block keeps its own entry. Shapes fly as
 // clones in a document-space layer (no page clips in the way), clipped at
 // the heading rule, which stays put on screen through the turn. Springs as
 // in the hero fall; reverses on scroll back. Desktop with motion only.
@@ -1319,7 +1318,6 @@ function setupPageMorph() {
       vel: 0,
       ...extra,
       clone: null,
-      widgets: [],
       landed: false,
       fromFloat: null,
     }))
@@ -1393,19 +1391,6 @@ function setupPageMorph() {
         background: g.bg,
         borderRadius: getComputedStyle(pair.from).borderRadius,
       });
-      if (pair.corners) {
-        // Live-corner widgets, one per corner.
-        pair.widgets = [0, 1, 2, 3].map(() => {
-          const widget = document.createElement("i");
-          widget.className = "morph-widget";
-          clone.appendChild(widget);
-          return widget;
-        });
-        const box = document.createElement("b");
-        box.className = "morph-bounds";
-        clone.appendChild(box);
-        pair.bounds = box;
-      }
       layer.appendChild(clone);
       pair.clone = clone;
     });
@@ -1415,7 +1400,7 @@ function setupPageMorph() {
     layer.replaceChildren();
     layer.style.clipPath = "";
     pairs.forEach((pair) => {
-      Object.assign(pair, { pos: 0, vel: 0, clone: null, widgets: [], bounds: null, landed: false, fromFloat: null });
+      Object.assign(pair, { pos: 0, vel: 0, clone: null, landed: false, fromFloat: null });
       pair.from.style.visibility = "";
       pair.to.style.visibility = "";
       setDrift(pair.from, true);
@@ -1499,24 +1484,6 @@ function setupPageMorph() {
         const m = clampNumber((e - 0.12) / 0.7, 0, 1);
         const radii = [0, 1, 2, 3].map((i) => 50 * (1 - smooth(clampNumber((m - i * 0.14) / 0.58, 0, 1))));
         pair.clone.style.borderRadius = radii.map((r) => `${r.toFixed(2)}%`).join(" ");
-        const show = m > 0 && m < 1 ? Math.sin(Math.PI * m) : 0;
-        const w = g.src.w;
-        // Widgets sit inside each corner, on the arc's diagonal.
-        const spots = [
-          [1, 1],
-          [-1, 1],
-          [-1, -1],
-          [1, -1],
-        ];
-        pair.widgets.forEach((widget, i) => {
-          const inset = (radii[i] / 100) * w * 0.42 + 4;
-          const [dx, dy] = spots[i];
-          const left = dx > 0 ? inset : w - inset;
-          const top = dy > 0 ? inset : w - inset;
-          widget.style.transform = `translate(${left.toFixed(1)}px, ${top.toFixed(1)}px) scale(${(1 / sx).toFixed(3)})`;
-          widget.style.opacity = show.toFixed(3);
-        });
-        pair.bounds.style.opacity = show.toFixed(3);
       }
     });
   };

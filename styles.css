@@ -851,27 +851,6 @@ main {
   will-change: transform;
 }
 
-/* Illustrator-style live-corner widget and selection bounds, shown while
-   the blue disc is reshaped. */
-.morph-widget {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 7px;
-  height: 7px;
-  margin: -3.5px 0 0 -3.5px;
-  border: 1.5px solid var(--paper);
-  border-radius: 50%;
-  background: var(--blue);
-  box-shadow: 0 0 0 1px var(--blue);
-}
-
-.morph-bounds {
-  position: absolute;
-  inset: -3px;
-  border: 1px solid var(--blue);
-}
-
 /* Metrics ------------------------------------------------------------------ */
 
 .section-grid {
