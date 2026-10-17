@@ -2286,7 +2286,7 @@ function setupGallery() {
     const compact = outerWidth < 700;
     const budget = (compact
       ? Math.max(520, window.innerHeight * 1.25)
-      : clampNumber(window.innerHeight - getHeaderHeight() - 190, 420, 820)) - gallerySheetPad * 2;
+      : clampNumber(window.innerHeight - getHeaderHeight() - 202, 420, 820)) - gallerySheetPad * 2;
     const gap = compact ? 10 : clampNumber(outerWidth * 0.012, 10, 18);
     const markRatio = width < 600 ? 2.4 : 0.72;
 
