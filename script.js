@@ -1325,14 +1325,32 @@ const pageMorphs = [
       [".geo-experience .g-s5", ".geo-works .g-chip", 0.16, 150, 0.82, { spin: 90 }],
     ],
   },
+  // Works music → illustration gallery (a sub-page of Works): the red disc
+  // drops and its corners sharpen into the current page's red number block;
+  // the hairline drops and levels out under the red autoplay bar, holding
+  // it up; slab, ray and blue square shrink into the small composition in
+  // the current sheet's blank space. Targets are looked up when the move
+  // starts (the current sheet); without a blank space those three stay put.
+  {
+    from: "works",
+    to: () => document.querySelector(".works-block[data-page-stop]"),
+    openEnd: true,
+    pairs: [
+      [".geo-works .g-disc", () => currentGallerySheet()?.querySelector(".sheet-mark"), 0, 120, 0.86, { corners: "square" }],
+      [".geo-works .g-line", () => document.querySelector(".gallery-rail"), 0.04, 130, 0.82],
+      [".geo-works .g-slab", () => currentGallerySheet()?.querySelector(".sg-slab"), 0.08, 150, 0.8],
+      [".geo-works .g-ray", () => currentGallerySheet()?.querySelector(".sg-ray"), 0.11, 160, 0.78],
+      [".geo-works .g-chip", () => currentGallerySheet()?.querySelector(".sg-chip"), 0.15, 150, 0.82, { spin: 90 }],
+    ],
+  },
 ];
 
-function setupPageMorph({ from, to, pairs: pairConfig }) {
+function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
   const fromPage = document.getElementById(from);
-  const toPage = document.getElementById(to);
+  const toPage = typeof to === "function" ? to() : document.getElementById(to);
   const fromGeo = fromPage?.querySelector(".page-geo");
-  const toGeo = toPage?.querySelector(".page-geo");
-  if (!fromGeo || !toGeo) {
+  const toGeo = openEnd ? null : toPage?.querySelector(".page-geo");
+  if (!fromGeo || !toPage || (!openEnd && !toGeo)) {
     return;
   }
 
@@ -1341,10 +1359,13 @@ function setupPageMorph({ from, to, pairs: pairConfig }) {
   layer.setAttribute("aria-hidden", "true");
   document.body.appendChild(layer);
 
+  // Targets given as functions are looked up again for every move.
+  const resolve = (target) => (typeof target === "function" ? target() : document.querySelector(target));
   const pairs = pairConfig
     .map(([from, to, start, stiffness, zeta, extra = {}]) => ({
       from: document.querySelector(from),
-      to: document.querySelector(to),
+      toRef: to,
+      to: resolve(to),
       start,
       k: stiffness,
       c: 2 * zeta * Math.sqrt(stiffness),
@@ -1355,17 +1376,27 @@ function setupPageMorph({ from, to, pairs: pairConfig }) {
       landed: false,
       fromFloat: null,
     }))
-    .filter((pair) => pair.from && pair.to);
+    .filter((pair) => pair.from);
   if (pairs.length !== pairConfig.length) {
     return;
   }
 
+  // Document-space layout box; offsets ignore transforms. Scroll offsets of
+  // containers in between (the horizontal gallery track) are subtracted.
   const docBox = (el) => {
     let x = 0;
     let y = 0;
     for (let node = el; node; node = node.offsetParent) {
       x += node.offsetLeft;
       y += node.offsetTop;
+      for (
+        let up = node.parentElement;
+        up && up !== node.offsetParent && up !== document.body && up !== document.documentElement;
+        up = up.parentElement
+      ) {
+        x -= up.scrollLeft;
+        y -= up.scrollTop;
+      }
     }
     return { x, y, cx: x + el.offsetWidth / 2, cy: y + el.offsetHeight / 2, w: el.offsetWidth, h: el.offsetHeight };
   };
@@ -1397,16 +1428,21 @@ function setupPageMorph({ from, to, pairs: pairConfig }) {
   let last = 0;
 
   const measure = () => {
+    pairs.forEach((pair) => {
+      pair.to = resolve(pair.toRef);
+      pair.inert = !pair.to;
+    });
     const fromBox = docBox(fromPage);
     const toBox = docBox(toPage);
     const fromGeoBox = docBox(fromGeo);
-    const toGeoBox = docBox(toGeo);
+    const toGeoBox = toGeo ? docBox(toGeo) : null;
     geometry = {
       fromTop: fromBox.y,
       toTop: toBox.y,
       fromRule: fromGeoBox.y + fromGeoBox.h,
-      toRule: toGeoBox.y + toGeoBox.h,
-      pairs: pairs.map((pair) => ({
+      // An open end has no rule: the clip line sweeps off the bottom.
+      toRule: toGeoBox ? toGeoBox.y + toGeoBox.h : null,
+      pairs: pairs.map((pair) => pair.inert ? null : ({
         src: docBox(pair.from),
         tgt: docBox(pair.to),
         rot: readNum(pair.from, "--r"),
@@ -1420,6 +1456,9 @@ function setupPageMorph({ from, to, pairs: pairConfig }) {
   const build = () => {
     pairs.forEach((pair, index) => {
       const g = geometry.pairs[index];
+      if (!g) {
+        return;
+      }
       const clone = document.createElement("span");
       clone.className = "morph-shape";
       Object.assign(clone.style, {
@@ -1442,9 +1481,13 @@ function setupPageMorph({ from, to, pairs: pairConfig }) {
     pairs.forEach((pair) => {
       Object.assign(pair, { pos: 0, vel: 0, clone: null, landed: false, fresh: true, fromFloat: null });
       hold(pair.from, "morph-out", false);
-      hold(pair.to, "morph-in", false);
+      if (pair.to) {
+        hold(pair.to, "morph-in", false);
+      }
     });
     active = false;
+    // Dynamic targets (the current gallery sheet) are looked up afresh.
+    geometry = null;
   };
 
   const range = () => {
@@ -1466,12 +1509,15 @@ function setupPageMorph({ from, to, pairs: pairConfig }) {
     }
     // Clip at the heading rule: the Projects rule at the start, the
     // Experience rule at the end (the same place on screen).
-    const ruleView =
-      geometry.fromRule - startScroll + (geometry.toRule - endScroll - (geometry.fromRule - startScroll)) * p;
+    const toRuleView = geometry.toRule === null ? window.innerHeight * 1.5 : geometry.toRule - endScroll;
+    const ruleView = geometry.fromRule - startScroll + (toRuleView - (geometry.fromRule - startScroll)) * p;
     layer.style.clipPath = `inset(-100vmax -100vmax ${(-(ruleView + scrollY)).toFixed(1)}px -100vmax)`;
 
     pairs.forEach((pair, index) => {
       const g = geometry.pairs[index];
+      if (!g) {
+        return;
+      }
       const landed = pair.pos === 1 && pair.vel === 0;
       if (pair.waiting && !pair.fromFloat) {
         return;
@@ -1549,6 +1595,14 @@ function setupPageMorph({ from, to, pairs: pairConfig }) {
     let moving = false;
     pairs.forEach((pair) => {
       const target = clampNumber((view.p - pair.start) / (1 - pair.start), 0, 1);
+      if (pair.inert) {
+        return;
+      }
+      if (!active && !pair.fromFloat) {
+        // Arriving from the far side (or loading mid-page): start where the
+        // scroll already is, so nothing flies in from a page not on screen.
+        Object.assign(pair, { pos: target, vel: 0 });
+      }
       // A shared shape is handed over, never drawn twice: wait while the
       // previous move is still landing on our source, or while the next
       // move still holds our target.
@@ -1973,12 +2027,18 @@ function planGallerySheet(ratios, width, heightBudget, gap) {
 
 function applyGallerySheet(sheet, ratios, plan, width, gap) {
   const pad = gallerySheetPad;
-  const items = [...sheet.children];
+  const items = [...sheet.children].filter((item) => !item.classList.contains("sheet-geo"));
   let y = pad;
+  let blank = null;
   plan.rows.forEach((row) => {
     const height = row.height * plan.scale;
     let used = gap * (row.to - row.from - 1);
     for (let i = row.from; i < row.to; i += 1) used += ratios[i] * height;
+    // The row's leftover width beside it is the sheet's blank space.
+    const free = width - used - gap;
+    if (free > 0 && (!blank || free * height > blank.w * blank.h)) {
+      blank = { x: row.align === "end" ? pad : pad + used + gap, y, w: free, h: height };
+    }
     let x = pad + (row.align === "end" ? width - used : 0);
     for (let i = row.from; i < row.to; i += 1) {
       const itemWidth = ratios[i] * height;
@@ -1993,6 +2053,32 @@ function applyGallerySheet(sheet, ratios, plan, width, gap) {
     y += height + gap;
   });
   sheet.style.height = `${Math.ceil(y - gap + pad)}px`;
+  placeSheetGeo(sheet, blank);
+}
+
+// The Works composition (black slab, yellow ray, blue square) re-drawn small
+// in each sheet's blank space; the music → gallery morph lands on the one in
+// the current sheet. Sheets without room for it get none.
+function placeSheetGeo(sheet, blank) {
+  let geo = sheet.querySelector(".sheet-geo");
+  const size = blank ? Math.min(blank.w, blank.h) * 0.82 : 0;
+  if (size < 64) {
+    geo?.remove();
+    return;
+  }
+  if (!geo) {
+    geo = document.createElement("div");
+    geo.className = "sheet-geo";
+    geo.setAttribute("aria-hidden", "true");
+    geo.innerHTML = '<span class="sg-slab"></span><span class="sg-ray"></span><span class="sg-chip"></span>';
+    sheet.prepend(geo);
+  }
+  Object.assign(geo.style, {
+    left: `${(blank.x + (blank.w - size) / 2).toFixed(1)}px`,
+    top: `${(blank.y + (blank.h - size) / 2).toFixed(1)}px`,
+    width: `${size.toFixed(1)}px`,
+    height: `${size.toFixed(1)}px`,
+  });
 }
 
 // In-page reordering: a work may trade places with its neighbour (never move
@@ -2064,6 +2150,8 @@ function paginateGallery(cardRatios, markRatio, width, heightBudget, gap) {
   return pages;
 }
 
+let currentGallerySheet = () => null;
+
 // Paged illustration gallery. The cards stay in index.html in newest-first
 // order (add new work there exactly as before); this splits them into pages
 // of 6–10, each laid out to fill one screen, turned horizontally by swipe,
@@ -2102,6 +2190,13 @@ function setupGallery() {
     <button class="gallery-step" type="button" data-step="1" data-i18n-aria="galleryNext" aria-label="${dictionary.galleryNext}">${arrow("m9 5 7 7-7 7")}</button>
     <span class="gallery-count" aria-live="polite"></span>`;
 
+  // Black rail under the autoplay bar, holding it up (the Works hairline
+  // drops onto it in the music → gallery morph).
+  const rail = document.createElement("span");
+  rail.className = "gallery-rail";
+  rail.setAttribute("aria-hidden", "true");
+  nav.prepend(rail);
+
   gallery.append(track, nav);
   masonry.replaceWith(gallery);
 
@@ -2112,6 +2207,7 @@ function setupGallery() {
   let pageKey = "";
 
   const currentIndex = () => Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+  currentGallerySheet = () => sheets[currentIndex()] || null;
   const show = (index) => {
     pageButtons.forEach((button, i) => button.setAttribute("aria-current", String(i === index)));
     count.textContent = `${pad(index + 1)} / ${pad(sheets.length)}`;
