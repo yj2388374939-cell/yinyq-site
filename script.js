@@ -1084,9 +1084,9 @@ function setupHeroFall() {
   };
 
   const progressNow = () => {
-    const headerH = getHeaderHeight();
-    const startScroll = geometry.projectsTop - window.innerHeight;
-    const endScroll = geometry.projectsTop - headerH;
+    const turn = pageTurnRange(hero, projects);
+    const startScroll = turn ? turn.start : geometry.projectsTop - window.innerHeight;
+    const endScroll = turn ? turn.end : geometry.projectsTop - getHeaderHeight();
     return {
       startScroll,
       endScroll,
@@ -1436,9 +1436,11 @@ function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
     const toBox = docBox(toPage);
     const fromGeoBox = docBox(fromGeo);
     const toGeoBox = toGeo ? docBox(toGeo) : null;
+    const turn = pageTurnRange(fromPage, toPage);
+    const headerH = getHeaderHeight();
     geometry = {
-      fromTop: fromBox.y,
-      toTop: toBox.y,
+      startScroll: turn ? turn.start : fromBox.y - headerH,
+      endScroll: turn ? turn.end : toBox.y - headerH,
       fromRule: fromGeoBox.y + fromGeoBox.h,
       // An open end has no rule: the clip line sweeps off the bottom.
       toRule: toGeoBox ? toGeoBox.y + toGeoBox.h : null,
@@ -1472,6 +1474,7 @@ function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
       });
       layer.appendChild(clone);
       pair.clone = clone;
+      pair.base = g.src;
     });
   };
 
@@ -1490,10 +1493,13 @@ function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
     geometry = null;
   };
 
+  // Read live every frame: the page can still shift after a move starts
+  // (gallery layout, images loading), and a stale end leaves the shapes
+  // short of their targets.
   const range = () => {
-    const headerH = getHeaderHeight();
-    const startScroll = geometry.fromTop - headerH;
-    const endScroll = geometry.toTop - headerH;
+    const turn = pageTurnRange(fromPage, toPage);
+    const startScroll = turn ? turn.start : geometry.startScroll;
+    const endScroll = turn ? turn.end : geometry.endScroll;
     return {
       startScroll,
       endScroll,
@@ -1506,6 +1512,13 @@ function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
     if (!active) {
       active = true;
       build();
+    }
+    // Live boxes, for the same reason as the live range.
+    const fromGeoBox = docBox(fromGeo);
+    geometry.fromRule = fromGeoBox.y + fromGeoBox.h;
+    if (toGeo) {
+      const toGeoBox = docBox(toGeo);
+      geometry.toRule = toGeoBox.y + toGeoBox.h;
     }
     // Clip at the heading rule: the Projects rule at the start, the
     // Experience rule at the end (the same place on screen).
@@ -1537,6 +1550,10 @@ function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
       if (landed) {
         return;
       }
+      g.src = docBox(pair.from);
+      g.tgt = docBox(pair.to);
+      // The clone keeps the box it was built with; transforms are relative to it.
+      const base = pair.base;
       const e = pair.pos;
       const eC = clampNumber(e, 0, 1);
       const hf = pair.fromFloat;
@@ -1555,10 +1572,10 @@ function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
       const tilt = clampNumber(pair.vel * 7, -20, 20) * (1 - Math.abs(2 * eC - 1) * 0.4);
       // A spin of a multiple of 90deg lands a square on the same pose.
       const rotate = rotFrom + (rotTo - rotFrom) * e + tilt;
-      const sx = Math.max(0.02, 1 + (g.tgt.w / g.src.w - 1) * e);
-      const sy = Math.max(0.02, 1 + (g.tgt.h / g.src.h - 1) * e);
+      const sx = Math.max(0.02, (g.src.w + (g.tgt.w - g.src.w) * e) / base.w);
+      const sy = Math.max(0.02, (g.src.h + (g.tgt.h - g.src.h) * e) / base.h);
       pair.clone.style.transform =
-        `translate3d(${(x - g.src.cx).toFixed(2)}px, ${(y - g.src.cy).toFixed(2)}px, 0) ` +
+        `translate3d(${(x - base.cx).toFixed(2)}px, ${(y - base.cy).toFixed(2)}px, 0) ` +
         `rotate(${rotate.toFixed(3)}deg) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`;
       if (g.bg !== g.tgtBg) {
         pair.clone.style.background = eC < 0.5 ? g.bg : g.tgtBg;
@@ -1669,6 +1686,20 @@ function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
 
 function getHeaderHeight() {
   return document.querySelector(".site-header")?.offsetHeight || 0;
+}
+
+// Scroll range of the turn from one page to the next, taken from the paging
+// stops themselves (the last stop of `fromEl`, the stop of `toEl`), so a
+// morph always completes exactly where paging comes to rest. A block that
+// fits on screen is bottom-aligned by the paging, not top-aligned.
+function pageTurnRange(fromEl, toEl) {
+  const { pages, starts, ends } = getPageStops();
+  const from = pages.indexOf(fromEl);
+  const to = pages.indexOf(toEl);
+  if (from < 0 || to < 0 || starts[to] <= ends[from]) {
+    return null;
+  }
+  return { start: ends[from], end: starts[to] };
 }
 
 // Desktop paging: the hero and each nav section are pages. One wheel gesture
