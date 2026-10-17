@@ -890,6 +890,150 @@ function setupScrollState() {
   });
 }
 
+// Hero → Projects fall: while the Projects page slides in, four hero shapes
+// (black plane, blue circle, red bar, black line) lift and drop into the
+// matching shapes in the Projects heading, then hand over to them. Linked to
+// scroll, so it reverses on the way back. Desktop with motion only.
+const fallQuery = window.matchMedia("(min-width: 861px)");
+const fallPairs = [
+  // [hero shape, projects shape, start of its window (0–1 of the page turn)]
+  [".supre-hero .s-plane", ".geo-projects .g-sq", 0],
+  [".supre-hero .s-bar", ".geo-projects .g-bar", 0.06],
+  [".supre-hero .s-line:not(.s-line-b)", ".geo-projects .g-line", 0.12],
+  [".supre-hero .s-circle", ".geo-projects .g-dot", 0.18],
+];
+
+function setupHeroFall() {
+  const hero = document.querySelector(".hero");
+  const projects = document.getElementById("projects");
+  const pairs = fallPairs
+    .map(([from, to, start]) => ({ from: document.querySelector(from), to: document.querySelector(to), start }))
+    .filter((pair) => pair.from && pair.to);
+  if (!hero || !projects || !pairs.length) {
+    return;
+  }
+
+  // Layout boxes in document coordinates; offsets ignore transforms, so the
+  // shapes' own rotation and drift never skew the measurement.
+  const docBox = (el) => {
+    let x = 0;
+    let y = 0;
+    for (let node = el; node; node = node.offsetParent) {
+      x += node.offsetLeft;
+      y += node.offsetTop;
+    }
+    return { cx: x + el.offsetWidth / 2, cy: y + el.offsetHeight / 2, w: el.offsetWidth, h: el.offsetHeight };
+  };
+  const readDeg = (el, name) => parseFloat(getComputedStyle(el).getPropertyValue(name)) || 0;
+  const easeInOut = (v) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
+
+  let geometry = null;
+  let active = false;
+  let frame = 0;
+
+  const measure = () => {
+    geometry = {
+      projectsTop: docBox(projects).cy - projects.offsetHeight / 2,
+      heroHeight: Math.max(1, hero.offsetHeight),
+      pairs: pairs.map((pair) => ({
+        src: docBox(pair.from),
+        tgt: docBox(pair.to),
+        rot: readDeg(pair.from, "--rot"),
+        drot: readDeg(pair.from, "--dr"),
+        ty: parseFloat(getComputedStyle(pair.from).getPropertyValue("--ty")) || 0,
+        tgtRot: readDeg(pair.to, "--r"),
+      })),
+    };
+  };
+
+  const clear = () => {
+    pairs.forEach((pair) => {
+      pair.from.style.transform = "";
+      pair.from.style.opacity = "";
+      pair.to.style.opacity = "";
+    });
+  };
+
+  const update = () => {
+    frame = 0;
+    const enabled = fallQuery.matches && !motionQuery.matches;
+    if (!enabled) {
+      if (active) {
+        clear();
+        active = false;
+      }
+      return;
+    }
+    if (!geometry) {
+      measure();
+    }
+
+    const headerH = getHeaderHeight();
+    const span = Math.max(1, window.innerHeight - headerH);
+    const scrollY = window.scrollY;
+    const startScroll = geometry.projectsTop - window.innerHeight;
+    const endScroll = geometry.projectsTop - headerH;
+    const progress = clampNumber((scrollY - startScroll) / Math.max(1, endScroll - startScroll) / 0.99, 0, 1);
+
+    if (progress <= 0) {
+      if (active) {
+        clear();
+        active = false;
+      }
+      return;
+    }
+    active = true;
+
+    // The hero's own scroll drift at the moment the fall begins, so the
+    // shapes leave from where they are drawn.
+    const heroStart = clampNumber(startScroll / geometry.heroHeight, 0, 1);
+    const lift = span * 0.14;
+
+    pairs.forEach((pair, index) => {
+      const g = geometry.pairs[index];
+      const e = easeInOut(clampNumber((progress - pair.start) / (1 - pair.start), 0, 1));
+      const landed = progress >= 1;
+      // Viewport positions at the start and end of the page turn.
+      const fromX = g.src.cx;
+      const fromY = g.src.cy + g.ty * heroStart - startScroll;
+      const toX = g.tgt.cx;
+      const toY = g.tgt.cy - endScroll;
+      const x = fromX + (toX - fromX) * e;
+      const y = fromY + (toY - fromY) * e - Math.sin(Math.PI * e) * lift;
+      const rotate = g.rot + g.drot * heroStart + (g.tgtRot - (g.rot + g.drot * heroStart)) * e;
+      const sx = 1 + (g.tgt.w / g.src.w - 1) * e;
+      const sy = 1 + (g.tgt.h / g.src.h - 1) * e;
+      pair.from.style.transform =
+        `translate3d(${(x - g.src.cx).toFixed(1)}px, ${(y - g.src.cy + scrollY).toFixed(1)}px, 0) ` +
+        `rotate(${rotate.toFixed(2)}deg) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`;
+      pair.from.style.opacity = landed ? "0" : "";
+      pair.to.style.opacity = landed ? "" : "0";
+    });
+  };
+
+  const queue = () => {
+    if (!frame) {
+      frame = window.requestAnimationFrame(update);
+    }
+  };
+  const remeasure = () => {
+    geometry = null;
+    queue();
+  };
+
+  window.addEventListener("scroll", queue, { passive: true });
+  window.addEventListener("resize", remeasure);
+  fallQuery.addEventListener?.("change", remeasure);
+  motionQuery.addEventListener?.("change", remeasure);
+  if ("ResizeObserver" in window) {
+    const observer = new ResizeObserver(remeasure);
+    observer.observe(hero);
+    observer.observe(projects.querySelector(".section-head") || projects);
+  }
+  window.addEventListener("load", remeasure);
+  update();
+}
+
 function getHeaderHeight() {
   return document.querySelector(".site-header")?.offsetHeight || 0;
 }
@@ -1741,6 +1885,7 @@ document.addEventListener("keydown", (event) => {
 applyLanguage(readStorage("resume-language") || "zh");
 setupGallery();
 setupScrollState();
+setupHeroFall();
 setupPaging();
 setupReveal();
 setupScrollSpy();
