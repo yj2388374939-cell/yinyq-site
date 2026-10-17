@@ -3330,6 +3330,22 @@ main {
     opacity: 1;
   }
 
+  /* Desktop: the red ground is unfolded from the falling red square
+     (setupContactGround in script.js) instead of wiped in. */
+  .motion .contact-section.ground-morph::before {
+    clip-path: polygon(var(--ground, 0 0, 0 0, 0 0, 0 0));
+    transition: none;
+  }
+
+  .motion .contact-section.ground-morph > * {
+    opacity: var(--ink-in, 0);
+    transition: none;
+  }
+
+  .motion .contact-section.ground-morph > .supre-contact {
+    opacity: var(--shapes-in, 0);
+  }
+
   /* Skills → contact handoff, linked to scroll (reverses when scrolling
      back). Skills shapes sink toward the contact page and slip behind its
      edge; the contact shapes drop and turn in from that same edge: the

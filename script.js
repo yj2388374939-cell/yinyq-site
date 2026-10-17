@@ -1704,6 +1704,172 @@ function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
   queue();
 }
 
+// Skills → Contact: the red square floating under the timeline falls into
+// the Contact page, turning level as it lands, then its corners are pulled
+// out one by one to the page's corners: it unfolds into the red ground (the
+// ground is the page's ::before, clipped to a polygon). The copy and the
+// contact shapes appear as the red spreads. Scroll-linked on a spring,
+// reverses on the way back. Elsewhere the ground keeps its wipe (CSS).
+function setupContactGround() {
+  const skills = document.getElementById("skills");
+  const contact = document.getElementById("contact");
+  const chip = document.querySelector(".sw-chip");
+  if (!skills || !contact || !chip) {
+    return;
+  }
+  const spring = { k: 120, c: 2 * 0.82 * Math.sqrt(120), pos: 0, vel: 0 };
+  const smooth = (v) => v * v * (3 - 2 * v);
+  const docBox = (el) => {
+    let x = 0;
+    let y = 0;
+    for (let node = el; node; node = node.offsetParent) {
+      x += node.offsetLeft;
+      y += node.offsetTop;
+    }
+    return { x, y, cx: x + el.offsetWidth / 2, cy: y + el.offsetHeight / 2, w: el.offsetWidth, h: el.offsetHeight };
+  };
+  const polygon = (points) => points.map(([x, y]) => `${x.toFixed(1)}px ${y.toFixed(1)}px`).join(", ");
+  let active = false;
+  let enabled = false;
+  let frame = 0;
+  let last = 0;
+
+  const setEnabled = (on) => {
+    enabled = on;
+    contact.classList.toggle("ground-morph", on);
+    if (!on) {
+      release();
+    }
+  };
+
+  const release = () => {
+    chip.style.transform = "";
+    chip.style.opacity = "";
+    ["--ground", "--ink-in", "--shapes-in"].forEach((name) => contact.style.removeProperty(name));
+    Object.assign(spring, { pos: 0, vel: 0 });
+    active = false;
+  };
+
+  const render = (turn) => {
+    const e = spring.pos;
+    const fall = smooth(clampNumber(e / 0.55, 0, 1));
+    const unfold = clampNumber((e - 0.55) / 0.45, 0, 1);
+    const W = contact.offsetWidth;
+    const H = contact.offsetHeight;
+    const page = docBox(contact);
+    // Landing square, level, in the right half of the page.
+    const land = { x: W * 0.64, y: H * 0.42, size: Math.min(W, H) * 0.26 };
+    const src = docBox(chip);
+    const chipShown = parseFloat(getComputedStyle(chip.parentElement).opacity) > 0.5;
+
+    if (unfold > 0 || !chipShown) {
+      // The ground takes over from the square: corners pulled out in turn.
+      chip.style.opacity = "0";
+      const grow = chipShown ? 1 : smooth(clampNumber(e / 0.55, 0, 1));
+      const half = (land.size / 2) * grow;
+      const from = [
+        [land.x - half, land.y - half],
+        [land.x + half, land.y - half],
+        [land.x + half, land.y + half],
+        [land.x - half, land.y + half],
+      ];
+      const to = [
+        [0, 0],
+        [W, 0],
+        [W, H],
+        [0, H],
+      ];
+      const points = from.map(([fx, fy], i) => {
+        const t = smooth(clampNumber((unfold - i * 0.09) / 0.73, 0, 1));
+        return [fx + (to[i][0] - fx) * t, fy + (to[i][1] - fy) * t];
+      });
+      contact.style.setProperty("--ground", e > 0 ? polygon(points) : polygon([[0, 0], [0, 0], [0, 0], [0, 0]]));
+    } else {
+      // The square falls: from where it floats to the landing spot.
+      contact.style.setProperty("--ground", polygon([[0, 0], [0, 0], [0, 0], [0, 0]]));
+      chip.style.opacity = "";
+      const fromX = src.cx;
+      const fromY = src.cy - turn.start;
+      const toX = page.x + land.x;
+      const toY = page.y + land.y - turn.end;
+      const x = fromX + (toX - fromX) * fall;
+      const y = fromY + (toY - fromY) * fall + window.scrollY;
+      const rot = 16 + (90 - 16) * fall + clampNumber(spring.vel * 8, -24, 24);
+      const scale = 1 + (land.size / src.h - 1) * fall;
+      chip.style.transform =
+        `translate3d(${(x - src.cx).toFixed(1)}px, ${(y - src.cy).toFixed(1)}px, 0) ` +
+        `rotate(${rot.toFixed(2)}deg) scale(${scale.toFixed(4)})`;
+    }
+    // The contact shapes show once the red is under most of them.
+    contact.style.setProperty("--shapes-in", clampNumber((unfold - 0.35) / 0.35, 0, 1).toFixed(3));
+    contact.style.setProperty("--ink-in", clampNumber((unfold - 0.5) / 0.5, 0, 1).toFixed(3));
+  };
+
+  const tick = (now) => {
+    frame = 0;
+    const on = fallQuery.matches && !motionQuery.matches;
+    if (on !== enabled) {
+      setEnabled(on);
+    }
+    if (!on) {
+      last = 0;
+      return;
+    }
+    const turn = pageTurnRange(skills, contact);
+    if (!turn) {
+      // No turn to drive it: show the page as it is at rest.
+      contact.style.setProperty("--ground", polygon([[0, 0], [contact.offsetWidth, 0], [contact.offsetWidth, contact.offsetHeight], [0, contact.offsetHeight]]));
+      contact.style.setProperty("--ink-in", "1");
+      contact.style.setProperty("--shapes-in", "1");
+      return;
+    }
+    const p = clampNumber((window.scrollY - turn.start) / Math.max(1, turn.end - turn.start) / 0.99, 0, 1);
+    const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
+    last = now;
+    if (!active) {
+      // Arriving from the far side (or loading here): start where we are.
+      Object.assign(spring, { pos: p, vel: 0 });
+    }
+    const steps = Math.max(1, Math.ceil(dt * 240));
+    const h = dt / steps;
+    for (let i = 0; i < steps; i += 1) {
+      spring.vel += (-spring.k * (spring.pos - p) - spring.c * spring.vel) * h;
+      spring.pos += spring.vel * h;
+    }
+    let moving = true;
+    if (Math.abs(spring.pos - p) < 0.0004 && Math.abs(spring.vel) < 0.004) {
+      Object.assign(spring, { pos: p, vel: 0 });
+      moving = false;
+    }
+    if (!moving && p <= 0) {
+      if (active) {
+        release();
+      }
+      contact.style.setProperty("--ground", polygon([[0, 0], [0, 0], [0, 0], [0, 0]]));
+    } else {
+      active = true;
+      render(turn);
+    }
+    if (moving) {
+      frame = window.requestAnimationFrame(tick);
+    } else {
+      last = 0;
+    }
+  };
+
+  const queue = () => {
+    if (!frame) {
+      frame = window.requestAnimationFrame(tick);
+    }
+  };
+  window.addEventListener("scroll", queue, { passive: true });
+  window.addEventListener("resize", queue);
+  fallQuery.addEventListener?.("change", queue);
+  motionQuery.addEventListener?.("change", queue);
+  window.addEventListener("load", queue);
+  queue();
+}
+
 function getHeaderHeight() {
   return document.querySelector(".site-header")?.offsetHeight || 0;
 }
@@ -2613,6 +2779,7 @@ setupGallery();
 setupScrollState();
 setupHeroFall();
 pageMorphs.forEach(setupPageMorph);
+setupContactGround();
 setupPaging();
 setupReveal();
 setupScrollSpy();
