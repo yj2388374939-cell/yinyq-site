@@ -890,31 +890,46 @@ function setupScrollState() {
   });
 }
 
-// Hero → Projects fall: while the Projects page slides in, four hero shapes
-// (black plane, blue circle, red bar, black line) lift and drop into the
-// matching shapes in the Projects heading, then hand over to them. Linked to
-// scroll, so it reverses on the way back. Desktop with motion only.
+// Hero → Projects fall: as the Projects page slides in, four hero shapes
+// (black plane, red bar, black line, blue circle) drop into the matching
+// shapes of the Projects heading. Each shape rides its own spring toward the
+// scroll position, so it trails the page, falls in with momentum, overshoots
+// a little and settles; it tilts with its speed. Once settled it hands over
+// to the Projects shape (same drift phase, same clip at the heading rule).
+// Reverses on scroll back. Desktop with motion only.
 const fallQuery = window.matchMedia("(min-width: 861px)");
 const fallPairs = [
-  // [hero shape, projects shape, start of its window (0–1 of the page turn)]
-  [".supre-hero .s-plane", ".geo-projects .g-sq", 0],
-  [".supre-hero .s-bar", ".geo-projects .g-bar", 0.06],
-  [".supre-hero .s-line:not(.s-line-b)", ".geo-projects .g-line", 0.12],
-  [".supre-hero .s-circle", ".geo-projects .g-dot", 0.18],
+  // hero shape, projects shape, window start, stiffness, damping ratio
+  [".supre-hero .s-plane", ".geo-projects .g-sq", 0, 120, 0.62],
+  [".supre-hero .s-bar", ".geo-projects .g-bar", 0.05, 170, 0.5],
+  [".supre-hero .s-line:not(.s-line-b)", ".geo-projects .g-line", 0.1, 105, 0.58],
+  [".supre-hero .s-circle", ".geo-projects .g-dot", 0.16, 210, 0.4],
 ];
 
 function setupHeroFall() {
   const hero = document.querySelector(".hero");
   const projects = document.getElementById("projects");
+  const layer = document.querySelector(".supre-hero");
+  const geo = document.querySelector(".geo-projects");
   const pairs = fallPairs
-    .map(([from, to, start]) => ({ from: document.querySelector(from), to: document.querySelector(to), start }))
+    .map(([from, to, start, stiffness, zeta]) => ({
+      from: document.querySelector(from),
+      to: document.querySelector(to),
+      start,
+      k: stiffness,
+      c: 2 * zeta * Math.sqrt(stiffness),
+      pos: 0,
+      vel: 0,
+      landed: false,
+      fromFloat: null,
+      toFloat: null,
+    }))
     .filter((pair) => pair.from && pair.to);
-  if (!hero || !projects || !pairs.length) {
+  if (!hero || !projects || !layer || !geo || !pairs.length) {
     return;
   }
 
-  // Layout boxes in document coordinates; offsets ignore transforms, so the
-  // shapes' own rotation and drift never skew the measurement.
+  // Layout boxes in document coordinates; offsets ignore transforms.
   const docBox = (el) => {
     let x = 0;
     let y = 0;
@@ -922,98 +937,183 @@ function setupHeroFall() {
       x += node.offsetLeft;
       y += node.offsetTop;
     }
-    return { cx: x + el.offsetWidth / 2, cy: y + el.offsetHeight / 2, w: el.offsetWidth, h: el.offsetHeight };
+    return { x, y, cx: x + el.offsetWidth / 2, cy: y + el.offsetHeight / 2, w: el.offsetWidth, h: el.offsetHeight };
   };
-  const readDeg = (el, name) => parseFloat(getComputedStyle(el).getPropertyValue(name)) || 0;
-  const easeInOut = (v) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
+  const readNum = (el, name) => parseFloat(getComputedStyle(el).getPropertyValue(name)) || 0;
+  // The drift animation's current offset (individual translate / rotate).
+  const readFloat = (el) => {
+    const style = getComputedStyle(el);
+    const [tx = 0, ty = 0] = style.translate === "none" ? [] : style.translate.split(" ").map(parseFloat);
+    const r = style.rotate === "none" ? 0 : parseFloat(style.rotate) || 0;
+    return { tx: tx || 0, ty: ty || 0, r };
+  };
+  const setDrift = (el, running) => {
+    el.style.animationPlayState = running ? "" : "paused";
+  };
 
   let geometry = null;
   let active = false;
   let frame = 0;
+  let last = 0;
 
   const measure = () => {
+    const projectsBox = docBox(projects);
+    const layerBox = docBox(layer);
+    const geoBox = docBox(geo);
     geometry = {
-      projectsTop: docBox(projects).cy - projects.offsetHeight / 2,
+      projectsTop: projectsBox.y,
       heroHeight: Math.max(1, hero.offsetHeight),
+      // Same clip line as the Projects composition (its heading rule).
+      clipBottom: layerBox.y + layerBox.h - (geoBox.y + geoBox.h),
       pairs: pairs.map((pair) => ({
         src: docBox(pair.from),
         tgt: docBox(pair.to),
-        rot: readDeg(pair.from, "--rot"),
-        drot: readDeg(pair.from, "--dr"),
-        ty: parseFloat(getComputedStyle(pair.from).getPropertyValue("--ty")) || 0,
-        tgtRot: readDeg(pair.to, "--r"),
+        rot: readNum(pair.from, "--rot"),
+        drot: readNum(pair.from, "--dr"),
+        ty: readNum(pair.from, "--ty"),
+        tgtRot: readNum(pair.to, "--r"),
       })),
     };
   };
 
-  const clear = () => {
+  const release = () => {
+    layer.style.clipPath = "";
     pairs.forEach((pair) => {
+      pair.pos = 0;
+      pair.vel = 0;
+      pair.landed = false;
+      pair.fromFloat = null;
+      pair.toFloat = null;
       pair.from.style.transform = "";
       pair.from.style.opacity = "";
       pair.to.style.opacity = "";
+      setDrift(pair.from, true);
+      setDrift(pair.to, true);
+    });
+    active = false;
+  };
+
+  const progressNow = () => {
+    const headerH = getHeaderHeight();
+    const startScroll = geometry.projectsTop - window.innerHeight;
+    const endScroll = geometry.projectsTop - headerH;
+    return {
+      startScroll,
+      endScroll,
+      p: clampNumber((window.scrollY - startScroll) / Math.max(1, endScroll - startScroll) / 0.99, 0, 1),
+    };
+  };
+
+  const render = (startScroll, endScroll) => {
+    if (!active) {
+      active = true;
+      layer.style.clipPath = `inset(-100vmax -100vmax ${geometry.clipBottom}px -100vmax)`;
+    }
+    const heroStart = clampNumber(startScroll / geometry.heroHeight, 0, 1);
+    const scrollY = window.scrollY;
+    const lift = (window.innerHeight - getHeaderHeight()) * 0.16;
+
+    pairs.forEach((pair, index) => {
+      const g = geometry.pairs[index];
+      const landed = pair.pos === 1 && pair.vel === 0;
+      if (landed !== pair.landed || !pair.fromFloat) {
+        pair.landed = landed;
+        // Freeze both drifts while flying so the shapes meet exactly.
+        setDrift(pair.from, landed);
+        setDrift(pair.to, landed);
+        if (!landed) {
+          pair.fromFloat = readFloat(pair.from);
+          pair.toFloat = readFloat(pair.to);
+        }
+        pair.from.style.opacity = landed ? "0" : "";
+        pair.to.style.opacity = landed ? "" : "0";
+      }
+      if (landed) {
+        return;
+      }
+
+      const e = pair.pos;
+      const eC = clampNumber(e, 0, 1);
+      const hf = pair.fromFloat;
+      const tf = pair.toFloat;
+      // Path in viewport space, from where the hero draws the shape when
+      // the turn starts to the Projects shape (with its frozen drift) when
+      // the turn ends, arcing up and dropping in. Scrolling beyond either
+      // end moves the shape with the page it belongs to.
+      const fromX = g.src.cx;
+      const fromY = g.src.cy + g.ty * heroStart - startScroll;
+      const toX = g.tgt.cx + tf.tx;
+      const toY = g.tgt.cy + tf.ty - endScroll;
+      const beyond =
+        Math.max(0, scrollY - endScroll) * eC + Math.min(0, scrollY - startScroll) * (1 - eC);
+      const x = fromX + (toX - fromX) * e;
+      const y = fromY + (toY - fromY) * e - Math.sin(Math.PI * eC) * lift - beyond + scrollY;
+      const rotFrom = g.rot + g.drot * heroStart;
+      const rotTo = g.tgtRot + tf.r;
+      const tilt = clampNumber(pair.vel * 9, -28, 28) * (1 - Math.abs(2 * eC - 1) * 0.4);
+      const rotate = rotFrom + (rotTo - rotFrom) * e + tilt;
+      const sx = Math.max(0.05, 1 + (g.tgt.w / g.src.w - 1) * e);
+      const sy = Math.max(0.05, 1 + (g.tgt.h / g.src.h - 1) * e);
+      // The frozen hero drift still applies before transform; cancel it.
+      pair.from.style.transform =
+        `rotate(${(-hf.r).toFixed(3)}deg) translate(${(-hf.tx).toFixed(2)}px, ${(-hf.ty).toFixed(2)}px) ` +
+        `translate3d(${(x - g.src.cx).toFixed(2)}px, ${(y - g.src.cy).toFixed(2)}px, 0) ` +
+        `rotate(${rotate.toFixed(3)}deg) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`;
     });
   };
 
-  const update = () => {
+  const tick = (now) => {
     frame = 0;
-    const enabled = fallQuery.matches && !motionQuery.matches;
-    if (!enabled) {
+    if (!fallQuery.matches || motionQuery.matches) {
       if (active) {
-        clear();
-        active = false;
+        release();
       }
+      last = 0;
       return;
     }
     if (!geometry) {
       measure();
     }
 
-    const headerH = getHeaderHeight();
-    const span = Math.max(1, window.innerHeight - headerH);
-    const scrollY = window.scrollY;
-    const startScroll = geometry.projectsTop - window.innerHeight;
-    const endScroll = geometry.projectsTop - headerH;
-    const progress = clampNumber((scrollY - startScroll) / Math.max(1, endScroll - startScroll) / 0.99, 0, 1);
+    const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
+    last = now;
+    const { startScroll, endScroll, p } = progressNow();
+    let moving = false;
 
-    if (progress <= 0) {
-      if (active) {
-        clear();
-        active = false;
+    pairs.forEach((pair) => {
+      const target = clampNumber((p - pair.start) / (1 - pair.start), 0, 1);
+      const steps = Math.max(1, Math.ceil(dt * 240));
+      const h = dt / steps;
+      for (let i = 0; i < steps; i += 1) {
+        pair.vel += (-pair.k * (pair.pos - target) - pair.c * pair.vel) * h;
+        pair.pos += pair.vel * h;
       }
-      return;
-    }
-    active = true;
-
-    // The hero's own scroll drift at the moment the fall begins, so the
-    // shapes leave from where they are drawn.
-    const heroStart = clampNumber(startScroll / geometry.heroHeight, 0, 1);
-    const lift = span * 0.14;
-
-    pairs.forEach((pair, index) => {
-      const g = geometry.pairs[index];
-      const e = easeInOut(clampNumber((progress - pair.start) / (1 - pair.start), 0, 1));
-      const landed = progress >= 1;
-      // Viewport positions at the start and end of the page turn.
-      const fromX = g.src.cx;
-      const fromY = g.src.cy + g.ty * heroStart - startScroll;
-      const toX = g.tgt.cx;
-      const toY = g.tgt.cy - endScroll;
-      const x = fromX + (toX - fromX) * e;
-      const y = fromY + (toY - fromY) * e - Math.sin(Math.PI * e) * lift;
-      const rotate = g.rot + g.drot * heroStart + (g.tgtRot - (g.rot + g.drot * heroStart)) * e;
-      const sx = 1 + (g.tgt.w / g.src.w - 1) * e;
-      const sy = 1 + (g.tgt.h / g.src.h - 1) * e;
-      pair.from.style.transform =
-        `translate3d(${(x - g.src.cx).toFixed(1)}px, ${(y - g.src.cy + scrollY).toFixed(1)}px, 0) ` +
-        `rotate(${rotate.toFixed(2)}deg) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`;
-      pair.from.style.opacity = landed ? "0" : "";
-      pair.to.style.opacity = landed ? "" : "0";
+      if (Math.abs(pair.pos - target) < 0.0004 && Math.abs(pair.vel) < 0.004) {
+        pair.pos = target;
+        pair.vel = 0;
+      } else {
+        moving = true;
+      }
     });
+
+    if (!moving && p <= 0) {
+      if (active) {
+        release();
+      }
+    } else {
+      render(startScroll, endScroll);
+    }
+
+    if (moving) {
+      frame = window.requestAnimationFrame(tick);
+    } else {
+      last = 0;
+    }
   };
 
   const queue = () => {
     if (!frame) {
-      frame = window.requestAnimationFrame(update);
+      frame = window.requestAnimationFrame(tick);
     }
   };
   const remeasure = () => {
@@ -1031,7 +1131,7 @@ function setupHeroFall() {
     observer.observe(projects.querySelector(".section-head") || projects);
   }
   window.addEventListener("load", remeasure);
-  update();
+  queue();
 }
 
 function getHeaderHeight() {
