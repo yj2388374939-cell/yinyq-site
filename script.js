@@ -907,7 +907,9 @@ const fallPairs = [
   [".supre-hero .s-bar", ".geo-projects .g-bar", 0.05, 170, 0.7],
   [".supre-hero .s-line:not(.s-line-b)", ".geo-projects .g-line", 0.1, 120, 0.74],
   [".supre-hero .s-circle", ".geo-projects .g-dot", 0.16, 210, 0.62],
-  [".supre-fall .s-square", ".featured-project .supre-mark", 0.3, 160, 0.72],
+  // Critically damped: it lands without overshoot (an overshoot reads as a
+  // flash of a bigger square, since it grows a lot on the way).
+  [".supre-fall .s-square", ".featured-project .supre-mark", 0.3, 220, 1],
 ];
 // Paint droplets thrown on impact: angle (deg), reach (× banner width), size (× banner height).
 const paintDrops = [
@@ -966,7 +968,14 @@ function setupHeroFall() {
   // The drift animation's (or transition's) current individual translate / rotate.
   const readFloat = (el) => {
     const style = getComputedStyle(el);
-    const [tx = 0, ty = 0] = style.translate === "none" ? [] : style.translate.split(" ").map(parseFloat);
+    // Computed translate keeps percentages ("0px 18%"): resolve them
+    // against the element's own box.
+    const [tx = 0, ty = 0] =
+      style.translate === "none"
+        ? []
+        : style.translate
+            .split(" ")
+            .map((v, i) => (v.endsWith("%") ? (parseFloat(v) / 100) * (i ? el.offsetHeight : el.offsetWidth) : parseFloat(v)));
     const r = style.rotate === "none" ? 0 : parseFloat(style.rotate) || 0;
     return { tx: tx || 0, ty: ty || 0, r };
   };
