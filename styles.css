@@ -1316,6 +1316,14 @@ main {
   opacity: var(--ink-in, 0);
 }
 
+/* Its in-view state, held without the transition while the red square
+   falls into it, so the square lands on a still target. */
+.featured-project.is-painting .supre-mark {
+  rotate: -8deg;
+  translate: 0 18%;
+  transition: none;
+}
+
 .featured-project > .paint-drop {
   position: absolute;
   z-index: 0;

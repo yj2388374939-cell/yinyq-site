@@ -903,11 +903,11 @@ function setupScrollState() {
 const fallQuery = window.matchMedia("(min-width: 861px)");
 const fallPairs = [
   // hero shape, projects shape, window start, stiffness, damping ratio
-  [".supre-hero .s-plane", ".geo-projects .g-sq", 0, 120, 0.62],
-  [".supre-hero .s-bar", ".geo-projects .g-bar", 0.05, 170, 0.5],
-  [".supre-hero .s-line:not(.s-line-b)", ".geo-projects .g-line", 0.1, 105, 0.58],
-  [".supre-hero .s-circle", ".geo-projects .g-dot", 0.16, 210, 0.4],
-  [".supre-fall .s-square", ".featured-project .supre-mark", 0.3, 150, 0.48],
+  [".supre-hero .s-plane", ".geo-projects .g-sq", 0, 130, 0.74],
+  [".supre-hero .s-bar", ".geo-projects .g-bar", 0.05, 170, 0.7],
+  [".supre-hero .s-line:not(.s-line-b)", ".geo-projects .g-line", 0.1, 120, 0.74],
+  [".supre-hero .s-circle", ".geo-projects .g-dot", 0.16, 210, 0.62],
+  [".supre-fall .s-square", ".featured-project .supre-mark", 0.3, 160, 0.72],
 ];
 // Paint droplets thrown on impact: angle (deg), reach (× banner width), size (× banner height).
 const paintDrops = [
@@ -941,8 +941,8 @@ function setupHeroFall() {
   }
   const mark = pairs[pairs.length - 1];
   mark.splash = true;
-  const slab = { start: 0.02, ...spring(120, 0.6) };
-  const splash = spring(60, 0.5);
+  const slab = { start: 0.02, ...spring(130, 0.76) };
+  const splash = spring(150, 0.82);
   const drops = paintDrops.map(() => {
     const drop = document.createElement("span");
     drop.className = "paint-drop";
@@ -1092,22 +1092,24 @@ function setupHeroFall() {
     const e = s.pos;
     const eC = clampNumber(e, 0, 1);
     const fromX = g.src.cx;
-    const fromY = g.src.cy + g.ty * view.heroStart - view.startScroll;
+    const fromY = g.src.cy + g.ty * view.hp - view.startScroll;
     const toX = g.tgt.cx + tf.tx;
     const toY = g.tgt.cy + tf.ty - view.endScroll;
     const beyond =
       Math.max(0, view.scrollY - view.endScroll) * eC + Math.min(0, view.scrollY - view.startScroll) * (1 - eC);
     const x = fromX + (toX - fromX) * e;
     const y = fromY + (toY - fromY) * e - Math.sin(Math.PI * eC) * view.lift - beyond + view.scrollY;
-    const rotFrom = g.rot + g.drot * view.heroStart;
+    const rotFrom = g.rot + g.drot * view.hp;
     const rotTo = g.tgtRot + tf.r;
     const tilt = clampNumber(s.vel * 9, -28, 28) * (1 - Math.abs(2 * eC - 1) * 0.4);
     const rotate = rotFrom + (rotTo - rotFrom) * e + tilt;
     const sx = Math.max(0.05, 1 + (g.tgt.w / g.src.w - 1) * e) * (1 + squash * 0.3);
     const sy = Math.max(0.05, 1 + (g.tgt.h / g.src.h - 1) * e) * (1 - squash * 0.5);
-    // A frozen drift still applies before transform; cancel it.
+    // The frozen drift still applies before transform. Cancel it in step
+    // with the flight: none at the start (the shape is exactly where the
+    // hero draws it, so release is seamless), all of it on arrival.
     return (
-      `rotate(${(-hf.r).toFixed(3)}deg) translate(${(-hf.tx).toFixed(2)}px, ${(-hf.ty).toFixed(2)}px) ` +
+      `rotate(${(-hf.r * eC).toFixed(3)}deg) translate(${(-hf.tx * eC).toFixed(2)}px, ${(-hf.ty * eC).toFixed(2)}px) ` +
       `translate3d(${(x - g.src.cx).toFixed(2)}px, ${(y - g.src.cy).toFixed(2)}px, 0) ` +
       `rotate(${rotate.toFixed(3)}deg) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`
     );
@@ -1122,7 +1124,9 @@ function setupHeroFall() {
       startScroll,
       endScroll,
       scrollY: window.scrollY,
-      heroStart: clampNumber(startScroll / geometry.heroHeight, 0, 1),
+      // The hero's own scroll drift: live above the turn (matches the CSS
+      // so release is seamless), held at its start value during the turn.
+      hp: clampNumber(Math.min(window.scrollY, startScroll) / geometry.heroHeight, 0, 1),
       lift: (window.innerHeight - getHeaderHeight()) * 0.16,
     };
     const sp = splash.pos;
