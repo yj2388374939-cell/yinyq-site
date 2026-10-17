@@ -109,7 +109,9 @@ jobs:
           # Re-upload the HTML with the header (same PutObject right the sync
           # uses; set-meta would need CopyObject).
           set +e
-          ossutil cp _site/ "oss://${OSS_BUCKET}/" -r -f --include "*.html" --meta "Cache-Control:no-cache" \
+          # Stage only the HTML (ossutil 1.7 cp ignores --include here).
+          (cd _site && find . -name '*.html' -exec install -D -m 0644 {} ../_html/{} \;)
+          ossutil cp _html/ "oss://${OSS_BUCKET}/" -r -f --meta "Cache-Control:no-cache" \
             --output-dir=oss-report -e "oss-${OSS_REGION}.aliyuncs.com" -i "$OSS_KEY_ID" -k "$OSS_KEY_SECRET"
           status=$?
           set -e
