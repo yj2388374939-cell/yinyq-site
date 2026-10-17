@@ -1276,8 +1276,10 @@ function setupHeroFall() {
   queue();
 }
 
-// Projects → Experience morph: as the Experience page slides in, the
-// Projects composition re-forms into the Experience "Supremus" stack. The
+// Page-to-page morphs: as a page slides in, the previous page's composition
+// re-forms into the next one, shape by shape.
+// Projects → Experience: the Projects composition re-forms into the
+// Experience "Supremus" stack. The
 // black square flattens into the top bar, the red diagonal thickens into
 // the red block, the hairline into the black line; the blue disc's corners
 // are pulled square one by one (like dragging live corners) into the blue
@@ -1285,20 +1287,41 @@ function setupHeroFall() {
 // clones in a document-space layer (no page clips in the way), clipped at
 // the heading rule, which stays put on screen through the turn. Springs as
 // in the hero fall; reverses on scroll back. Desktop with motion only.
-const morphPairs = [
-  // from, to, window start, stiffness, damping ratio, extra
-  [".geo-projects .g-sq", ".geo-experience .g-s1", 0, 150, 0.78],
-  [".geo-projects .g-bar", ".geo-experience .g-s2", 0.06, 160, 0.76],
-  [".geo-projects .g-line", ".geo-experience .g-s3", 0.1, 140, 0.8],
-  [".geo-projects .g-dot", ".geo-experience .g-s5", 0.14, 120, 0.85, { corners: true, spin: 90 }],
+// Experience → Works: the red block's corners are pulled round one by one
+// into the red disc; the black bar thickens into the slab, the yellow block
+// stretches into the ray, the black line swings round to the hairline, and
+// the blue square rises out of the rule and turns onto its point.
+const pageMorphs = [
+  {
+    from: "projects",
+    to: "experience",
+    pairs: [
+      // from, to, window start, stiffness, damping ratio, extra
+      [".geo-projects .g-sq", ".geo-experience .g-s1", 0, 150, 0.78],
+      [".geo-projects .g-bar", ".geo-experience .g-s2", 0.06, 160, 0.76],
+      [".geo-projects .g-line", ".geo-experience .g-s3", 0.1, 140, 0.8],
+      [".geo-projects .g-dot", ".geo-experience .g-s5", 0.14, 120, 0.85, { corners: "square", spin: 90 }],
+    ],
+  },
+  {
+    from: "experience",
+    to: "works",
+    pairs: [
+      [".geo-experience .g-s2", ".geo-works .g-disc", 0, 130, 0.85, { corners: "round" }],
+      [".geo-experience .g-s1", ".geo-works .g-slab", 0.05, 150, 0.78],
+      [".geo-experience .g-s4", ".geo-works .g-ray", 0.09, 160, 0.76],
+      [".geo-experience .g-s3", ".geo-works .g-line", 0.12, 140, 0.8],
+      [".geo-experience .g-s5", ".geo-works .g-chip", 0.16, 150, 0.82, { spin: 90 }],
+    ],
+  },
 ];
 
-function setupPageMorph() {
-  const fromPage = document.getElementById("projects");
-  const toPage = document.getElementById("experience");
-  const fromGeo = document.querySelector(".geo-projects");
-  const toGeo = document.querySelector(".geo-experience");
-  if (!fromPage || !toPage || !fromGeo || !toGeo) {
+function setupPageMorph({ from, to, pairs: pairConfig }) {
+  const fromPage = document.getElementById(from);
+  const toPage = document.getElementById(to);
+  const fromGeo = fromPage?.querySelector(".page-geo");
+  const toGeo = toPage?.querySelector(".page-geo");
+  if (!fromGeo || !toGeo) {
     return;
   }
 
@@ -1307,7 +1330,7 @@ function setupPageMorph() {
   layer.setAttribute("aria-hidden", "true");
   document.body.appendChild(layer);
 
-  const pairs = morphPairs
+  const pairs = pairConfig
     .map(([from, to, start, stiffness, zeta, extra = {}]) => ({
       from: document.querySelector(from),
       to: document.querySelector(to),
@@ -1322,7 +1345,7 @@ function setupPageMorph() {
       fromFloat: null,
     }))
     .filter((pair) => pair.from && pair.to);
-  if (pairs.length !== morphPairs.length) {
+  if (pairs.length !== pairConfig.length) {
     return;
   }
 
@@ -1400,7 +1423,7 @@ function setupPageMorph() {
     layer.replaceChildren();
     layer.style.clipPath = "";
     pairs.forEach((pair) => {
-      Object.assign(pair, { pos: 0, vel: 0, clone: null, landed: false, fromFloat: null });
+      Object.assign(pair, { pos: 0, vel: 0, clone: null, landed: false, fresh: true, fromFloat: null });
       pair.from.style.visibility = "";
       pair.to.style.visibility = "";
       setDrift(pair.from, true);
@@ -1442,13 +1465,16 @@ function setupPageMorph() {
         pair.fromFloat = readFloat(pair.from);
         pair.from.style.visibility = "hidden";
       }
-      if (landed !== pair.landed) {
+      // Visibility and drift are written only when the state changes, so a
+      // neighbouring morph that shares these shapes is not overridden.
+      if (landed !== pair.landed || pair.fresh !== false) {
+        pair.fresh = false;
         pair.landed = landed;
         setDrift(pair.to, landed);
+        pair.to.style.visibility = landed ? "" : "hidden";
+        pair.clone.style.visibility = landed ? "hidden" : "";
       }
       const tf = readFloat(pair.to);
-      pair.to.style.visibility = landed ? "" : "hidden";
-      pair.clone.style.visibility = landed ? "hidden" : "";
       if (landed) {
         return;
       }
@@ -1480,9 +1506,13 @@ function setupPageMorph() {
       }
 
       if (pair.corners) {
-        // Circle → square: each corner's radius is dragged in turn.
+        // Each corner's radius is dragged in turn: circle → square, or
+        // square → circle.
         const m = clampNumber((e - 0.12) / 0.7, 0, 1);
-        const radii = [0, 1, 2, 3].map((i) => 50 * (1 - smooth(clampNumber((m - i * 0.14) / 0.58, 0, 1))));
+        const radii = [0, 1, 2, 3].map((i) => {
+          const t = smooth(clampNumber((m - i * 0.14) / 0.58, 0, 1));
+          return 50 * (pair.corners === "round" ? t : 1 - t);
+        });
         pair.clone.style.borderRadius = radii.map((r) => `${r.toFixed(2)}%`).join(" ");
       }
     });
@@ -2408,7 +2438,7 @@ applyLanguage(readStorage("resume-language") || "zh");
 setupGallery();
 setupScrollState();
 setupHeroFall();
-setupPageMorph();
+pageMorphs.forEach(setupPageMorph);
 setupPaging();
 setupReveal();
 setupScrollSpy();
