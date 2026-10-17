@@ -106,6 +106,15 @@ jobs:
         run: |
           OSS_KEY_ID="$(printf '%s' "$OSS_KEY_ID" | tr -d '[:space:]')"
           OSS_KEY_SECRET="$(printf '%s' "$OSS_KEY_SECRET" | tr -d '[:space:]')"
-          ossutil set-meta "oss://${OSS_BUCKET}/" "Cache-Control:no-cache" --update -r -f --include "*.html" \
-            -e "oss-${OSS_REGION}.aliyuncs.com" -i "$OSS_KEY_ID" -k "$OSS_KEY_SECRET" \
-            || { echo "::warning title=Cache header not set::HTML Cache-Control could not be updated"; exit 1; }
+          # Re-upload the HTML with the header (same PutObject right the sync
+          # uses; set-meta would need CopyObject).
+          set +e
+          ossutil cp _site/ "oss://${OSS_BUCKET}/" -r -f --include "*.html" --meta "Cache-Control:no-cache" \
+            --output-dir=oss-report -e "oss-${OSS_REGION}.aliyuncs.com" -i "$OSS_KEY_ID" -k "$OSS_KEY_SECRET"
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            reason="$(cat oss-report/* 2>/dev/null | grep -o 'ErrorCode=[^,]*' | sort | uniq -c | head -3 | tr '\n' ' ')"
+            echo "::warning title=Cache header not set::exit ${status} ${reason}"
+            exit "$status"
+          fi
