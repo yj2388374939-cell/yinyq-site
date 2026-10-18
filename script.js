@@ -2025,6 +2025,17 @@ function setupPaging() {
   syncMode();
   pageQuery.addEventListener?.("change", syncMode);
 
+  // Locked: every way of scrolling moves page to page, so a page-to-page
+  // animation is never left half way. It applies while the animations run
+  // (desktop, motion allowed) and every page fits the screen; otherwise
+  // (small window, a page taller than the screen, reduced motion) scrolling
+  // stays free inside tall pages as before.
+  const locked = () => {
+    if (!root.classList.contains("paged") || !fallQuery.matches || motionQuery.matches) return false;
+    const { starts, ends } = getPageStops();
+    return starts.every((start, i) => ends[i] - start <= 2);
+  };
+
   const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
   const animateTo = (target, duration = pageTurnMs) => {
@@ -2112,6 +2123,8 @@ function setupPaging() {
       const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
       const delta = event.deltaY * unit;
       if (!delta) return;
+      // Locked: the page never scrolls by itself, only by turning.
+      if (locked()) event.preventDefault();
 
       const now = performance.now();
       const gap = now - lastWheelAt;
@@ -2143,14 +2156,26 @@ function setupPaging() {
 
   window.addEventListener("keydown", (event) => {
     if (!root.classList.contains("paged") || event.altKey || event.ctrlKey || event.metaKey) return;
-    if (event.target.closest?.("input, textarea, select, button, [contenteditable]")) return;
+    if (event.target.closest?.("input, textarea, select, [contenteditable]")) return;
+    // Space presses a focused button; the other keys still turn the page.
+    if (event.key === " " && event.target.closest?.("button, a")) return;
 
+    const isLocked = locked();
     const keys = { PageDown: 1, PageUp: -1, " ": event.shiftKey ? -1 : 1 };
+    if (isLocked) {
+      Object.assign(keys, { ArrowDown: 1, ArrowUp: -1, Home: "first", End: "last" });
+    }
     const direction = keys[event.key];
     if (!direction) return;
 
     event.preventDefault();
     if (animating) return;
+
+    if (direction === "first" || direction === "last") {
+      const { starts } = getPageStops();
+      animateTo(direction === "first" ? starts[0] : starts[starts.length - 1]);
+      return;
+    }
 
     const delta = direction * (window.innerHeight - getHeaderHeight()) * 0.85;
     if (!turn(direction, delta)) {
@@ -2159,6 +2184,28 @@ function setupPaging() {
       animateTo(clampNumber(window.scrollY + delta, 0, max), pageSettleMs);
     }
   });
+
+  // Locked: any scroll that paging did not make (scrollbar drag, middle-
+  // click autoscroll, find in page, focus moving off screen) settles on the
+  // nearest page once it stops, so no page-to-page animation rests half way.
+  let strayTimer = 0;
+  const settle = () => {
+    if (animating || !locked()) return;
+    const { starts } = getPageStops();
+    const y = window.scrollY;
+    const nearest = starts.reduce((best, start) => (Math.abs(start - y) < Math.abs(best - y) ? start : best), starts[0]);
+    if (Math.abs(nearest - y) > 2) animateTo(nearest, pageSettleMs);
+  };
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (animating) return;
+      window.clearTimeout(strayTimer);
+      strayTimer = window.setTimeout(settle, 160);
+    },
+    { passive: true },
+  );
+  window.addEventListener("load", () => window.setTimeout(settle, 300));
 
   // Nav links turn to their page instead of jumping.
   document.addEventListener("click", (event) => {
