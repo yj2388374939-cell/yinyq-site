@@ -1351,7 +1351,7 @@ const pageMorphs = [
   // into the long slab and the line, the blue square flattens into the
   // blue tick, the red number block into the red square (which then falls
   // on into the Contact ground). The yellow ray stays with its sheet; the
-  // yellow disc keeps its own entry. Free flight, no clip. Skipped where
+  // yellow disc drops in and grows at its spot. Free flight, no clip. Skipped where
   // the floating group is hidden for lack of room.
   {
     from: () => document.querySelector(".works-block[data-page-stop]"),
@@ -1362,6 +1362,9 @@ const pageMorphs = [
       [() => currentGallerySheet()?.querySelector(".sg-slab"), () => skillsWeightShape(".sw-slab"), 0.05, 150, 0.8],
       [() => document.querySelector(".gallery-rail"), () => skillsWeightShape(".sw-line"), 0.08, 130, 0.82],
       [() => currentGallerySheet()?.querySelector(".sg-chip"), () => skillsWeightShape(".sw-tick"), 0.12, 150, 0.8],
+      // The yellow disc enters on its own, in the clone layer so the line
+      // passes behind it throughout.
+      [null, () => skillsWeightShape(".sw-disc"), 0.3, 170, 0.6, { enter: true }],
     ],
   },
 ];
@@ -1391,7 +1394,15 @@ function setupPageMorph({ from, to, openEnd = false, clip = true, pairs: pairCon
 
   // Shapes given as functions (the current gallery sheet's) are looked up
   // again for every move.
-  const resolve = (target) => (typeof target === "function" ? target() : document.querySelector(target));
+  // A pair with no source (`enter: true`) is a shape that enters on its
+  // own during the move: it grows in at its target, drawn in the clone
+  // layer so it stacks correctly with the shapes flying past it.
+  const resolve = (target) => {
+    if (!target) {
+      return null;
+    }
+    return typeof target === "function" ? target() : document.querySelector(target);
+  };
   const pairs = pairConfig
     .map(([from, to, start, stiffness, zeta, extra = {}]) => ({
       fromRef: from,
@@ -1408,7 +1419,7 @@ function setupPageMorph({ from, to, openEnd = false, clip = true, pairs: pairCon
       landed: false,
       fromFloat: null,
     }))
-    .filter((pair) => typeof pair.fromRef === "function" || pair.from);
+    .filter((pair) => pair.enter || typeof pair.fromRef === "function" || pair.from);
   if (pairs.length !== pairConfig.length) {
     return;
   }
@@ -1463,7 +1474,7 @@ function setupPageMorph({ from, to, openEnd = false, clip = true, pairs: pairCon
     pairs.forEach((pair) => {
       pair.from = resolve(pair.fromRef);
       pair.to = resolve(pair.toRef);
-      pair.inert = !pair.from || !pair.to;
+      pair.inert = (!pair.enter && !pair.from) || !pair.to;
     });
     const fromBox = docBox(fromPage);
     const toBox = docBox(toPage);
@@ -1478,11 +1489,11 @@ function setupPageMorph({ from, to, openEnd = false, clip = true, pairs: pairCon
       // An open end has no rule: the clip line sweeps off the bottom.
       toRule: toGeoBox ? toGeoBox.y + toGeoBox.h : null,
       pairs: pairs.map((pair) => pair.inert ? null : ({
-        src: docBox(pair.from),
+        src: docBox(pair.from || pair.to),
         tgt: docBox(pair.to),
-        rot: readNum(pair.from, "--r"),
+        rot: readNum(pair.from || pair.to, "--r"),
         tgtRot: readNum(pair.to, "--r"),
-        bg: getComputedStyle(pair.from).backgroundColor,
+        bg: getComputedStyle(pair.from || pair.to).backgroundColor,
         tgtBg: getComputedStyle(pair.to).backgroundColor,
       })),
     };
@@ -1503,7 +1514,7 @@ function setupPageMorph({ from, to, openEnd = false, clip = true, pairs: pairCon
         width: `${g.src.w}px`,
         height: `${g.src.h}px`,
         background: g.bg,
-        borderRadius: getComputedStyle(pair.from).borderRadius,
+        borderRadius: getComputedStyle(pair.from || pair.to).borderRadius,
       });
       layer.appendChild(clone);
       pair.clone = clone;
@@ -1514,7 +1525,11 @@ function setupPageMorph({ from, to, openEnd = false, clip = true, pairs: pairCon
     const rank = (key) => {
       const live = pairs.filter((pair) => pair.clone);
       live
-        .sort((a, b) => (a[key].compareDocumentPosition(b[key]) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1))
+        .sort((a, b) => {
+          const elA = a[key] || a.to;
+          const elB = b[key] || b.to;
+          return elA.compareDocumentPosition(elB) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+        })
         .forEach((pair, i) => {
           pair[`${key}Rank`] = i + 1;
         });
@@ -1590,8 +1605,10 @@ function setupPageMorph({ from, to, openEnd = false, clip = true, pairs: pairCon
       }
       if (!pair.fromFloat) {
         // Freeze and hide the source; the clone starts exactly on it.
-        hold(pair.from, "morph-out", true);
-        pair.fromFloat = readFloat(pair.from);
+        if (pair.from) {
+          hold(pair.from, "morph-out", true);
+        }
+        pair.fromFloat = pair.from ? readFloat(pair.from) : { tx: 0, ty: 0, r: 0 };
       }
       if (landed !== pair.landed || pair.fresh !== false) {
         pair.fresh = false;
@@ -1603,12 +1620,23 @@ function setupPageMorph({ from, to, openEnd = false, clip = true, pairs: pairCon
       if (landed) {
         return;
       }
-      g.src = docBox(pair.from);
+      g.src = docBox(pair.from || pair.to);
       g.tgt = docBox(pair.to);
       // The clone keeps the box it was built with; transforms are relative to it.
       const base = pair.base;
       const e = pair.pos;
       const eC = clampNumber(e, 0, 1);
+      if (pair.enter) {
+        // Entering shape: drops a little onto its spot while it grows in
+        // (a spring overshoot gives it a small bounce).
+        const drop = (1 - eC) * -0.35 * g.tgt.h;
+        const grow = Math.max(0.001, e);
+        pair.clone.style.transform =
+          `translate3d(${(g.tgt.cx + tf.tx - base.cx).toFixed(2)}px, ${(g.tgt.cy + tf.ty + drop - base.cy).toFixed(2)}px, 0) ` +
+          `rotate(${(g.tgtRot + tf.r).toFixed(3)}deg) scale(${grow.toFixed(4)})`;
+        pair.clone.style.zIndex = String(pair.toRank);
+        return;
+      }
       const hf = pair.fromFloat;
       // Viewport path from the Projects shape (turn start) to the
       // Experience shape (turn end); beyond either end it rides its page.
@@ -1679,7 +1707,7 @@ function setupPageMorph({ from, to, openEnd = false, clip = true, pairs: pairCon
       // A shared shape is handed over, never drawn twice: wait while the
       // previous move is still landing on our source, or while the next
       // move still holds our target.
-      if (!pair.fromFloat && pair.from.classList.contains("morph-in")) {
+      if (!pair.fromFloat && pair.from?.classList.contains("morph-in")) {
         Object.assign(pair, { pos: 0, vel: 0, waiting: true });
         moving = moving || target > 0;
         return;
