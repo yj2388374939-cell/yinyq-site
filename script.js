@@ -1346,14 +1346,41 @@ const pageMorphs = [
       [".geo-works .g-chip", () => currentGallerySheet()?.querySelector(".sg-chip"), 0.15, 150, 0.82, { spin: 90 }],
     ],
   },
+  // Illustration gallery → Skills: the gallery's shapes fall into the
+  // floating group under the timeline. The black slab and the rail drop
+  // into the long slab and the line, the blue square flattens into the
+  // blue tick, the red number block into the red square (which then falls
+  // on into the Contact ground). The yellow ray stays with its sheet; the
+  // yellow disc keeps its own entry. Free flight, no clip. Skipped where
+  // the floating group is hidden for lack of room.
+  {
+    from: () => document.querySelector(".works-block[data-page-stop]"),
+    to: "skills",
+    clip: false,
+    pairs: [
+      [() => currentGallerySheet()?.querySelector(".sheet-mark"), () => skillsWeightShape(".sw-chip"), 0, 130, 0.82],
+      [() => currentGallerySheet()?.querySelector(".sg-slab"), () => skillsWeightShape(".sw-slab"), 0.05, 150, 0.8],
+      [() => document.querySelector(".gallery-rail"), () => skillsWeightShape(".sw-line"), 0.08, 130, 0.82],
+      [() => currentGallerySheet()?.querySelector(".sg-chip"), () => skillsWeightShape(".sw-tick"), 0.12, 150, 0.8],
+    ],
+  },
 ];
 
-function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
-  const fromPage = document.getElementById(from);
-  const toPage = typeof to === "function" ? to() : document.getElementById(to);
-  const fromGeo = fromPage?.querySelector(".page-geo");
-  const toGeo = openEnd ? null : toPage?.querySelector(".page-geo");
-  if (!fromGeo || !toPage || (!openEnd && !toGeo)) {
+// A shape of the floating group under the Skills timeline, or null while
+// the group is hidden for lack of room.
+function skillsWeightShape(selector) {
+  const group = document.querySelector(".skills-weight");
+  return group && !group.classList.contains("is-off") ? group.querySelector(selector) : null;
+}
+
+function setupPageMorph({ from, to, openEnd = false, clip = true, pairs: pairConfig }) {
+  const page = (ref) => (typeof ref === "function" ? ref() : document.getElementById(ref));
+  const fromPage = page(from);
+  const toPage = page(to);
+  // Without a clip the shapes fly freely (no heading rule to sink into).
+  const fromGeo = clip ? fromPage?.querySelector(".page-geo") : null;
+  const toGeo = clip && !openEnd ? toPage?.querySelector(".page-geo") : null;
+  if (!fromPage || !toPage || (clip && !fromGeo) || (clip && !openEnd && !toGeo)) {
     return;
   }
 
@@ -1362,11 +1389,13 @@ function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
   layer.setAttribute("aria-hidden", "true");
   document.body.appendChild(layer);
 
-  // Targets given as functions are looked up again for every move.
+  // Shapes given as functions (the current gallery sheet's) are looked up
+  // again for every move.
   const resolve = (target) => (typeof target === "function" ? target() : document.querySelector(target));
   const pairs = pairConfig
     .map(([from, to, start, stiffness, zeta, extra = {}]) => ({
-      from: document.querySelector(from),
+      fromRef: from,
+      from: resolve(from),
       toRef: to,
       to: resolve(to),
       start,
@@ -1379,7 +1408,7 @@ function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
       landed: false,
       fromFloat: null,
     }))
-    .filter((pair) => pair.from);
+    .filter((pair) => typeof pair.fromRef === "function" || pair.from);
   if (pairs.length !== pairConfig.length) {
     return;
   }
@@ -1432,19 +1461,20 @@ function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
 
   const measure = () => {
     pairs.forEach((pair) => {
+      pair.from = resolve(pair.fromRef);
       pair.to = resolve(pair.toRef);
-      pair.inert = !pair.to;
+      pair.inert = !pair.from || !pair.to;
     });
     const fromBox = docBox(fromPage);
     const toBox = docBox(toPage);
-    const fromGeoBox = docBox(fromGeo);
+    const fromGeoBox = fromGeo ? docBox(fromGeo) : null;
     const toGeoBox = toGeo ? docBox(toGeo) : null;
     const turn = pageTurnRange(fromPage, toPage);
     const headerH = getHeaderHeight();
     geometry = {
       startScroll: turn ? turn.start : fromBox.y - headerH,
       endScroll: turn ? turn.end : toBox.y - headerH,
-      fromRule: fromGeoBox.y + fromGeoBox.h,
+      fromRule: fromGeoBox ? fromGeoBox.y + fromGeoBox.h : null,
       // An open end has no rule: the clip line sweeps off the bottom.
       toRule: toGeoBox ? toGeoBox.y + toGeoBox.h : null,
       pairs: pairs.map((pair) => pair.inert ? null : ({
@@ -1498,7 +1528,9 @@ function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
     layer.style.clipPath = "";
     pairs.forEach((pair) => {
       Object.assign(pair, { pos: 0, vel: 0, clone: null, landed: false, fresh: true, fromFloat: null });
-      hold(pair.from, "morph-out", false);
+      if (pair.from) {
+        hold(pair.from, "morph-out", false);
+      }
       if (pair.to) {
         hold(pair.to, "morph-in", false);
       }
@@ -1528,18 +1560,20 @@ function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
       active = true;
       build();
     }
-    // Live boxes, for the same reason as the live range.
-    const fromGeoBox = docBox(fromGeo);
-    geometry.fromRule = fromGeoBox.y + fromGeoBox.h;
-    if (toGeo) {
-      const toGeoBox = docBox(toGeo);
-      geometry.toRule = toGeoBox.y + toGeoBox.h;
+    if (fromGeo) {
+      // Live boxes, for the same reason as the live range.
+      const fromGeoBox = docBox(fromGeo);
+      geometry.fromRule = fromGeoBox.y + fromGeoBox.h;
+      if (toGeo) {
+        const toGeoBox = docBox(toGeo);
+        geometry.toRule = toGeoBox.y + toGeoBox.h;
+      }
+      // Clip at the heading rule: the Projects rule at the start, the
+      // Experience rule at the end (the same place on screen).
+      const toRuleView = geometry.toRule === null ? window.innerHeight * 1.5 : geometry.toRule - endScroll;
+      const ruleView = geometry.fromRule - startScroll + (toRuleView - (geometry.fromRule - startScroll)) * p;
+      layer.style.clipPath = `inset(-100vmax -100vmax ${(-(ruleView + scrollY)).toFixed(1)}px -100vmax)`;
     }
-    // Clip at the heading rule: the Projects rule at the start, the
-    // Experience rule at the end (the same place on screen).
-    const toRuleView = geometry.toRule === null ? window.innerHeight * 1.5 : geometry.toRule - endScroll;
-    const ruleView = geometry.fromRule - startScroll + (toRuleView - (geometry.fromRule - startScroll)) * p;
-    layer.style.clipPath = `inset(-100vmax -100vmax ${(-(ruleView + scrollY)).toFixed(1)}px -100vmax)`;
 
     // The move hands over as one: real shapes return only once every
     // shape has settled, so a landed shape never ends up under (or over) a
@@ -1623,7 +1657,9 @@ function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
       last = 0;
       return;
     }
-    if (!geometry) {
+    if (!geometry || !active) {
+      // While idle, look the shapes up again: the next move must use the
+      // gallery sheet that is showing then.
       measure();
     }
     const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
@@ -1648,7 +1684,7 @@ function setupPageMorph({ from, to, openEnd = false, pairs: pairConfig }) {
         moving = moving || target > 0;
         return;
       }
-      if (pair.to.classList.contains("morph-out")) {
+      if (pair.to.classList.contains("morph-out") || pair.to.classList.contains("morph-held")) {
         Object.assign(pair, { pos: 1, vel: 0, waiting: true });
         moving = moving || target < 1;
         return;
@@ -1745,6 +1781,7 @@ function setupContactGround() {
   const release = () => {
     chip.style.transform = "";
     chip.style.opacity = "";
+    chip.classList.remove("morph-held");
     ["--ground", "--ink-in", "--shapes-in"].forEach((name) => contact.style.removeProperty(name));
     Object.assign(spring, { pos: 0, vel: 0 });
     active = false;
@@ -1826,6 +1863,13 @@ function setupContactGround() {
     const p = clampNumber((window.scrollY - turn.start) / Math.max(1, turn.end - turn.start) / 0.99, 0, 1);
     const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
     last = now;
+    if (!active && chip.classList.contains("morph-in")) {
+      // The gallery → Skills move is still landing the square: wait for it.
+      if (p > 0) {
+        frame = window.requestAnimationFrame(tick);
+      }
+      return;
+    }
     if (!active) {
       // Arriving from the far side (or loading here): start where we are.
       Object.assign(spring, { pos: p, vel: 0 });
@@ -1848,6 +1892,8 @@ function setupContactGround() {
       contact.style.setProperty("--ground", polygon([[0, 0], [0, 0], [0, 0], [0, 0]]));
     } else {
       active = true;
+      // Lets the gallery → Skills move wait until the square is given back.
+      chip.classList.add("morph-held");
       render(turn);
     }
     if (moving) {
